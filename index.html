@@ -3,14 +3,14 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Mapa Sprzedaży - Powiaty</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     body {
       margin: 0;
       padding: 0;
-      font-family: sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
 
     #map {
@@ -19,6 +19,7 @@
       background: #f0f0f0;
     }
 
+    /* Styl dla etykiet powiatów */
     .county-label {
       background: rgba(255, 255, 255, 0.9);
       border: 1px solid #333;
@@ -29,20 +30,37 @@
       pointer-events: none;
     }
 
+    /* Legenda dostosowana do mobile */
     .legend {
       background: white;
-      padding: 10px;
-      line-height: 20px;
+      padding: 12px;
+      line-height: 24px;
       border-radius: 8px;
       box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      max-width: 200px;
     }
 
     .legend i {
-      width: 16px;
-      height: 16px;
+      width: 18px;
+      height: 18px;
       float: left;
-      margin-right: 8px;
-      border-radius: 2px;
+      margin-right: 10px;
+      border-radius: 3px;
+    }
+
+    /* Optymalizacja Pop-upów na telefonach */
+    .leaflet-popup-content {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Ukrywanie legendy na bardzo małych ekranach (opcjonalnie) */
+    @media (max-width: 600px) {
+      .legend {
+        font-size: 12px;
+        padding: 8px;
+        line-height: 18px;
+      }
     }
   </style>
 </head>
@@ -55,24 +73,28 @@
 
   <script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
-    const GEOJSON_FILE = 'powiaty4205.geojson'; // Plik musi być w tym samym folderze
+    const GEOJSON_FILE = 'powiaty4205.geojson';
 
-    const map = L.map('map', { preferCanvas: true }).setView([52.06, 19.48], 6);
+    // Inicjalizacja mapy z blokadą scrolla (lepiej dla mobile)
+    const map = L.map('map', { 
+      preferCanvas: true,
+      scrollWheelZoom: false, // Zapobiega przypadkowemu zoomowaniu podczas przewijania strony
+      tap: true // Obsługa dotyku
+    }).setView([52.06, 19.48], window.innerWidth < 600 ? 5 : 6);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OpenStreetMap'
+      attribution: '&copy; OSM'
     }).addTo(map);
 
     function getColor(seller) {
-      // Zamieniamy wszystko na małe litery, żeby uniknąć problemów z wielkością znaków
       const s = seller ? seller.trim().toLowerCase() : '';
-
       switch (s) {
         case 'aleksander': return '#3498db';
-        case 'dominik': return '#2ecc71';
-        case 'michał': return '#f1c40f';
-        case 's': return '#e74c3c';
-        default: return '#bdc3c7'; // Szary dla braku danych
+        case 'dominik':    return '#2ecc71';
+        case 'michał':     return '#f1c40f';
+        case 'dawid':      return '#e74c3c';
+        case 's':          return '#e67e22';
+        default:           return '#bdc3c7';
       }
     }
 
@@ -83,7 +105,6 @@
 
     async function loadProject() {
       try {
-        // 1. Pobieranie danych z Google Sheets i GeoJSON równolegle
         const [csvResponse, geoResponse] = await Promise.all([
           fetch(SHEET_URL),
           fetch(GEOJSON_FILE)
@@ -98,7 +119,6 @@
           if (row.Nazwa) dataMap[cleanName(row.Nazwa)] = row.Sprzedawca;
         });
 
-        // 2. Renderowanie warstwy
         const geoLayer = L.geoJson(powiatyData, {
           style: function (feature) {
             const props = feature.properties;
@@ -114,42 +134,36 @@
             const rawName = props.nazwa || props.Nazwa || props.name || "Nieznany";
             const seller = dataMap[cleanName(rawName)] || "Brak danych";
 
-            layer.bindPopup(`<b>Powiat:</b> ${rawName}<br><b>Sprzedawca:</b> ${seller}`);
-            layer.bindTooltip(`${rawName}`, { permanent: false, direction: 'center', className: 'county-label' });
-
-            layer.on('mouseover', function () { this.setStyle({ fillOpacity: 0.9, weight: 2 }); });
-            layer.on('mouseout', function () { geoLayer.resetStyle(this); });
+            layer.bindPopup(`<strong>Powiat:</strong> ${rawName}<br><strong>Opiekun:</strong> ${seller}`);
+            
+            // Reakcja na kliknięcie (zamiast hover, który nie działa na mobile)
+            layer.on('click', function () {
+              this.setStyle({ fillOpacity: 0.9, weight: 3 });
+              this.openPopup();
+            });
           }
         }).addTo(map);
-
-        // Obsługa Tooltipów przy zoomie
-        map.on('zoomend', () => {
-          const z = map.getZoom();
-          geoLayer.eachLayer(l => z >= 11 ? l.openTooltip() : l.closeTooltip());
-        });
 
         // Legenda
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = () => {
           const div = L.DomUtil.create('div', 'legend');
-          const sellers = ['Dominik', 'Michał', 'Aleksander', 'S'];
+          const sellers = ['Dominik', 'Michał', 'Aleksander', 'Dawid', 'S'];
           div.innerHTML = '<strong>Opiekunowie:</strong><br>';
           sellers.forEach(s => {
-            div.innerHTML += `<i style="background:${getColor(s)}"></i> Sprzedawca ${s}<br>`;
+            div.innerHTML += `<i style="background:${getColor(s)}"></i> ${s}<br>`;
           });
-          div.innerHTML += `<i style="background:${getColor('')}"></i> Brak danych`;
+          div.innerHTML += `<i style="background:${getColor('')}"></i> Brak`;
           return div;
         };
         legend.addTo(map);
 
       } catch (e) {
-        console.error("Błąd ładowania danych:", e);
-        alert("Wystąpił błąd podczas ładowania mapy. Upewnij się, że plik GeoJSON jest w tym samym folderze co HTML.");
+        console.error("Błąd:", e);
       }
     }
 
     loadProject();
   </script>
 </body>
-
 </html>
