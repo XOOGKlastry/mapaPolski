@@ -127,7 +127,7 @@
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = () => {
           const div = L.DomUtil.create('div', 'legend');
-          const sellers = ['Dominik', 'Michał', 'Aleksander', 'Dawid', 'S'];
+          const sellers = ['Dominik', 'Michał', 'Aleksander', 'Dawid', 'Dawidek'];
           div.innerHTML = '<strong>Opiekunowie:</strong><br>';
           sellers.forEach(s => {
             div.innerHTML += `<i style="background:${getColor(s)}"></i> ${s}<br>`;
@@ -146,3 +146,4 @@
   </script>
 </body>
 </html>
+
