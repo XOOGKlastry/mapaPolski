@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>System Monitorowania Sprzedaży Mobile</title>
+  <title>Klasteryzacja Polski</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -29,7 +29,6 @@
       background: #000;
     }
 
-    /* --- SIDEBAR --- */
     #sidebar {
       position: absolute;
       top: 0;
@@ -84,7 +83,6 @@
       padding: 10px;
     }
 
-    /* --- UI ELEMENTS --- */
     details {
       background: white;
       border: 1px solid var(--border);
@@ -186,7 +184,6 @@
       z-index: 1;
     }
 
-    /* --- LEGENDA --- */
     #floating-legend {
       position: absolute;
       z-index: 1000;
@@ -196,8 +193,6 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.5);
       transition: all 0.3s ease;
-
-      /* DESKTOP */
       bottom: 30px;
       left: 90px;
       max-height: 80vh;
@@ -285,7 +280,6 @@
       }
     }
 
-    /* --- ETYKIETY I POPUPY --- */
     .city-label {
       background: transparent !important;
       border: none !important;
@@ -561,7 +555,6 @@
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       map.on('zoomend', function () {
-        // Pokaż etykiety tylko jeśli warstwa miast jest na mapie I zoom jest odpowiedni
         if (map.hasLayer(citiesLayer) && map.getZoom() > 11) {
           document.getElementById('map').classList.add('show-labels');
         } else {
@@ -584,7 +577,6 @@
         const stats = {};
         parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
 
-        // WARSTWA POWIATÓW
         geoLayer = L.geoJson(powiatyGeo, {
           style: getStyle,
           onEachFeature: (f, l) => {
@@ -604,16 +596,19 @@
           }
         }).addTo(map);
 
-        // WARSTWA MIAST
         citiesLayer = L.geoJson(citiesGeo, {
           pane: 'citiesPane',
           pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
           onEachFeature: (f, l) => {
             const name = f.properties.NAZWA || f.properties.name || "Miejscowość";
+            const pop = f.properties.LICZBAMIESZKANCOW;
+            const popFormatted = pop ? pop.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "";
+
             l.bindTooltip(name, { permanent: true, direction: 'top', className: 'city-label', offset: [0, -8] });
             const lat = l.getLatLng().lat, lng = l.getLatLng().lng;
             const html = `
-              <div style="font-size:1.1rem; font-weight:700; margin-bottom:5px">${name}</div>
+              <div style="font-size:1.1rem; font-weight:700; margin-bottom:2px">${name}</div>
+              ${popFormatted ? `<div style="font-size:0.85rem; color:#666; margin-bottom:8px">👥 ${popFormatted}</div>` : ''}
               <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -628,10 +623,8 @@
         createFloatingLegend(stats);
         setupSearch();
 
-        // Listenery
         document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
 
-        // NOWA LOGIKA CHECKBOXA
         document.getElementById('toggle-cities').onchange = (e) => {
           if (e.target.checked) {
             if (!map.hasLayer(citiesLayer)) map.addLayer(citiesLayer);
