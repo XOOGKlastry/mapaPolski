@@ -13,12 +13,10 @@
     :root {
       --primary: #0f172a;
       --accent: #2563eb;
-      --danger: #ef4444;
       --surface: #ffffff;
       --bg-light: #f1f5f9;
       --border: #e2e8f0;
-      --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      --glass: rgba(255, 255, 255, 0.95);
     }
 
     body {
@@ -28,12 +26,10 @@
       display: flex;
       height: 100vh;
       overflow: hidden;
-      color: var(--primary);
       background: #000;
-      /* Tło pod mapą */
     }
 
-    /* --- SIDEBAR (Panel boczny) --- */
+    /* --- SIDEBAR --- */
     #sidebar {
       position: absolute;
       top: 0;
@@ -41,24 +37,19 @@
       height: 100%;
       width: 340px;
       max-width: 85%;
-      /* Na mobile zajmie max 85% szerokości */
       background: var(--surface);
       z-index: 2000;
       box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
       display: flex;
       flex-direction: column;
       transform: translateX(-105%);
-      /* Domyślnie ukryty */
-      transition: var(--transition);
-      padding: 0;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    /* Klasa otwierająca panel */
     #sidebar.active {
       transform: translateX(0);
     }
 
-    /* Nagłówek panelu */
     .sidebar-header {
       padding: 20px;
       background: var(--primary);
@@ -70,7 +61,7 @@
 
     .sidebar-header h2 {
       margin: 0;
-      font-size: 1.2rem;
+      font-size: 1.1rem;
       font-weight: 700;
     }
 
@@ -81,63 +72,51 @@
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
+      cursor: pointer;
     }
 
-    /* Kontener na treść panelu */
     .sidebar-content {
       flex-grow: 1;
       overflow-y: auto;
       padding: 10px;
     }
 
-    /* --- ZWIJAKI (ACCORDION) --- */
+    /* --- UI ELEMENTS --- */
     details {
       background: white;
       border: 1px solid var(--border);
       border-radius: 12px;
       margin-bottom: 12px;
       overflow: hidden;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
     }
 
     details[open] {
-      border-color: var(--accent);
+      border-color: var(--primary);
     }
 
     summary {
-      list-style: none;
       padding: 16px;
       font-weight: 700;
-      font-size: 0.95rem;
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: #fff;
-      transition: background 0.2s;
+      list-style: none;
     }
 
-    /* Ikona strzałki w zwijaku */
     summary::after {
       content: '+';
       font-size: 1.2rem;
-      color: var(--accent);
-      font-weight: 300;
+      color: var(--primary);
     }
 
     details[open] summary::after {
       content: '−';
     }
 
-    summary:hover {
-      background: var(--bg-light);
-    }
-
-    /* Ukrycie domyślnego trójkąta */
     summary::-webkit-details-marker {
       display: none;
     }
@@ -148,16 +127,6 @@
       background: #fcfcfc;
     }
 
-    /* Pola formularzy */
-    label {
-      display: block;
-      margin-bottom: 8px;
-      font-size: 0.75rem;
-      text-transform: uppercase;
-      color: #64748b;
-      font-weight: 700;
-    }
-
     input[type="text"],
     select {
       width: 100%;
@@ -165,19 +134,16 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       font-size: 16px;
-      /* Zapobiega zoomowaniu na iPhone */
       box-sizing: border-box;
-      background: white;
     }
 
     input:focus,
     select:focus {
       outline: none;
       border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
-    /* Lista Map (Kafelki w zwijaku) */
+    /* --- MAP SWITCHER --- */
     .map-switcher-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -214,38 +180,7 @@
       border-color: var(--accent);
     }
 
-    /* Legenda */
-    .legend-item {
-      display: flex;
-      align-items: center;
-      padding: 8px;
-      border-radius: 6px;
-      margin-bottom: 4px;
-    }
-
-    .color-box {
-      width: 16px;
-      height: 16px;
-      border-radius: 4px;
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-
-    .seller-name {
-      flex-grow: 1;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    .count-badge {
-      font-size: 0.75rem;
-      background: #e2e8f0;
-      padding: 2px 8px;
-      border-radius: 12px;
-      font-weight: 700;
-    }
-
-    /* --- MAPA I PRZYCISKI FAB (Floating Action Buttons) --- */
+    /* --- MAP LAYOUT --- */
     #map {
       flex-grow: 1;
       height: 100%;
@@ -253,7 +188,182 @@
       z-index: 1;
     }
 
-    /* Kontener przycisków na dole */
+    /* --- NOWOCZESNA LEGENDA (HYBRYDOWA) --- */
+    #floating-legend {
+      position: absolute;
+      z-index: 1000;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+      /* Domyślny styl DESKTOP */
+      bottom: 30px;
+      left: 90px;
+      /* Obok przycisku menu */
+      max-height: 300px;
+      width: 220px;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    /* Styl pojedynczego elementu legendy */
+    .legend-chip {
+      display: flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.85rem;
+      white-space: nowrap;
+    }
+
+    .legend-chip:hover {
+      background: rgba(0, 0, 0, 0.05);
+    }
+
+    .legend-chip.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    .chip-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 8px;
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+
+    .legend-chip.active .chip-color {
+      border-color: white;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+    }
+
+    .chip-label {
+      font-weight: 600;
+      flex-grow: 1;
+      margin-right: 8px;
+    }
+
+    .chip-count {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      font-weight: 500;
+    }
+
+    /* --- STYLE MOBILE DLA LEGENDY --- */
+    @media (max-width: 768px) {
+      #floating-legend {
+        bottom: auto;
+        top: 10px;
+        /* Na górze ekranu */
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        height: 50px;
+        flex-direction: row;
+        /* Poziomy układ */
+        align-items: center;
+        overflow-x: auto;
+        /* Przewijanie poziome */
+        overflow-y: hidden;
+        white-space: nowrap;
+        padding: 0 5px;
+        border-radius: 50px;
+        /* Kapsułka */
+        /* Ukrycie paska przewijania */
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      #floating-legend::-webkit-scrollbar {
+        display: none;
+      }
+
+      .legend-chip {
+        padding: 6px 14px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.5);
+        margin: 0 3px;
+        border: 1px solid #eee;
+      }
+
+      .legend-chip.active {
+        background: var(--primary);
+        border-color: var(--primary);
+      }
+    }
+
+    /* --- ETYKIETY I POPUPY --- */
+    .city-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      font-weight: 800;
+      color: var(--primary);
+      text-shadow: 0 0 4px #fff, 0 0 2px #fff;
+      font-size: 13px;
+      display: none;
+      margin-top: -8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .city-label::before,
+    .city-label::after {
+      display: none !important;
+    }
+
+    .show-labels .city-label {
+      display: block;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .leaflet-popup-content {
+      margin: 16px;
+      width: 260px !important;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 15px;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #334155;
+    }
+
+    .nav-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* --- FAB CONTROLS --- */
     .bottom-controls {
       position: absolute;
       bottom: 30px;
@@ -263,10 +373,8 @@
       box-sizing: border-box;
       display: flex;
       justify-content: space-between;
-      align-items: flex-end;
       z-index: 1000;
       pointer-events: none;
-      /* Żeby można było klikać w mapę pomiędzy przyciskami */
     }
 
     .fab-btn {
@@ -286,7 +394,6 @@
       transform: scale(0.95);
     }
 
-    /* Przycisk Menu (Lewy) */
     .btn-menu {
       width: 56px;
       height: 56px;
@@ -294,7 +401,6 @@
       font-size: 24px;
     }
 
-    /* Przycisk Lokalizacji (Prawy) */
     .btn-loc {
       padding: 12px 20px;
       border-radius: 50px;
@@ -302,7 +408,6 @@
       gap: 8px;
     }
 
-    /* Tło przyciemniające (Overlay) */
     #overlay {
       position: fixed;
       top: 0;
@@ -321,7 +426,6 @@
       pointer-events: auto;
     }
 
-    /* Wyniki wyszukiwania */
     #search-results {
       max-height: 150px;
       overflow-y: auto;
@@ -335,24 +439,6 @@
       cursor: pointer;
     }
 
-    /* Popupy */
-    .leaflet-popup-content-wrapper {
-      border-radius: 16px;
-    }
-
-    .nav-btn {
-      display: block;
-      text-align: center;
-      margin-top: 10px;
-      padding: 12px;
-      background: var(--accent);
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 600;
-    }
-
-    /* Loader */
     #loader {
       position: absolute;
       top: 0;
@@ -367,7 +453,6 @@
 <body>
 
   <div id="loader"></div>
-
   <div id="overlay" onclick="toggleSidebar()"></div>
 
   <div id="sidebar">
@@ -377,7 +462,6 @@
     </div>
 
     <div class="sidebar-content">
-
       <details open>
         <summary>🔍 Znajdź Obszar</summary>
         <div class="details-body">
@@ -385,21 +469,13 @@
           <div id="search-results"></div>
         </div>
       </details>
-
       <details>
-        <summary>👤 Filtruj Opiekuna</summary>
+        <summary>👤 Ustawienia Widoku</summary>
         <div class="details-body">
-          <label>Wybierz z listy:</label>
-          <select id="filter-seller">
-            <option value="all">Wszyscy opiekunowie</option>
-          </select>
-          <div style="margin-top:15px">
-            <label>Przezroczystość:</label>
-            <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7" style="width: 100%;">
-          </div>
+          <label>Przezroczystość warstw:</label>
+          <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7" style="width: 100%;">
         </div>
       </details>
-
       <details>
         <summary>🗺️ Typ Mapy</summary>
         <div class="details-body map-switcher-grid">
@@ -418,24 +494,16 @@
           </div>
         </div>
       </details>
-
-      <details>
-        <summary>📊 Statystyki</summary>
-        <div class="details-body">
-          <div id="legend-container"></div>
-        </div>
-      </details>
-
     </div>
   </div>
 
   <div id="map"></div>
 
-  <div class="bottom-controls">
-    <button class="fab-btn btn-menu" onclick="toggleSidebar()">
-      ☰
-    </button>
+  <div id="floating-legend">
+  </div>
 
+  <div class="bottom-controls">
+    <button class="fab-btn btn-menu" onclick="toggleSidebar()">☰</button>
     <button class="fab-btn btn-loc" onclick="locateUser()">
       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round"
@@ -481,12 +549,13 @@
       return sellerColors[s];
     }
 
+    let activeSellerFilter = 'all';
+
     function getStyle(feature) {
       const name = cleanName(feature.properties.nazwa || feature.properties.Nazwa);
       const row = fullData[name];
-      const filterSeller = document.getElementById('filter-seller').value;
       const opacityVal = document.getElementById('opacity-range').value;
-      const isMatch = filterSeller === 'all' || (row && row.Sprzedawca === filterSeller);
+      const isMatch = activeSellerFilter === 'all' || (row && row.Sprzedawca === activeSellerFilter);
       return { fillColor: getSellerColor(row ? row.Sprzedawca : null), weight: 1, color: 'white', fillOpacity: isMatch ? opacityVal : 0.05, opacity: isMatch ? 1 : 0.1 };
     }
 
@@ -503,6 +572,12 @@
 
       map = L.map('map', { zoomControl: false }).setView([52.06, 19.48], 6);
       L.control.zoom({ position: 'topright' }).addTo(map);
+
+      map.on('zoomend', function () {
+        if (map.getZoom() > 11) document.getElementById('map').classList.add('show-labels');
+        else document.getElementById('map').classList.remove('show-labels');
+      });
+
       currentBasemap = baseLayers.osm;
       map.addLayer(currentBasemap);
       map.createPane('citiesPane'); map.getPane('citiesPane').style.zIndex = 650;
@@ -518,7 +593,7 @@
         const stats = {};
         parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
 
-        // Warstwa Powiatów
+        // WARSTWA POWIATÓW
         geoLayer = L.geoJson(powiatyGeo, {
           style: getStyle,
           onEachFeature: (f, l) => {
@@ -533,30 +608,71 @@
             }
             l.bindPopup(html);
             l.on('click', (e) => {
-              // Na mobile po kliknięciu centrujemy mapę
               map.flyToBounds(e.target.getBounds(), { padding: [20, 20], maxZoom: 11 });
             });
           }
         }).addTo(map);
 
-        // Warstwa Miast
+        // WARSTWA MIAST
         citiesLayer = L.geoJson(citiesGeo, {
           pane: 'citiesPane',
           pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
           onEachFeature: (f, l) => {
-            const name = f.properties.NAZWA || f.properties.name;
+            const name = f.properties.NAZWA || f.properties.name || "Miejscowość";
+            l.bindTooltip(name, { permanent: true, direction: 'top', className: 'city-label', offset: [0, -8] });
             const lat = l.getLatLng().lat, lng = l.getLatLng().lng;
-            const html = `<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">🚗 Prowadź do</a>`;
+            const html = `
+              <div style="font-size:1.1rem; font-weight:700; margin-bottom:5px">${name}</div>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prowadź do
+              </a>
+            `;
             l.bindPopup(html);
           }
         }).addTo(map);
 
-        updateUI(stats);
+        createFloatingLegend(stats);
         setupSearch();
-        setupFilters();
+        document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
         document.getElementById('loader').style.display = 'none';
 
       } catch (err) { console.error(err); }
+    }
+
+    function createFloatingLegend(stats) {
+      const legend = document.getElementById('floating-legend');
+      legend.innerHTML = '';
+
+      // Opcja "Wszyscy"
+      const allItem = document.createElement('div');
+      allItem.className = 'legend-chip active';
+      allItem.innerHTML = `<div class="chip-color" style="background:#000"></div><div class="chip-label">Wszyscy</div>`;
+      allItem.onclick = function () {
+        setActiveFilter('all', this);
+      };
+      legend.appendChild(allItem);
+
+      Object.entries(stats).sort((a, b) => b[1] - a[1]).forEach(([n, c]) => {
+        const item = document.createElement('div');
+        item.className = 'legend-chip';
+        item.innerHTML = `<div class="chip-color" style="background:${getSellerColor(n)}"></div><div class="chip-label">${n}</div><div class="chip-count">${c}</div>`;
+        item.onclick = function () {
+          setActiveFilter(n, this);
+        };
+        legend.appendChild(item);
+      });
+    }
+
+    function setActiveFilter(seller, elem) {
+      activeSellerFilter = seller;
+      geoLayer.setStyle(getStyle);
+
+      // Aktualizacja UI
+      document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
+      elem.classList.add('active');
     }
 
     function locateUser() {
@@ -583,29 +699,12 @@
           const d = document.createElement('div'); d.className = 'search-item'; d.innerText = m.name;
           d.onclick = () => {
             input.value = m.name; res.innerHTML = '';
-            toggleSidebar(); // Zamknij panel po wyborze
+            toggleSidebar();
             map.flyToBounds(m.layer.getBounds(), { maxZoom: 12 });
             setTimeout(() => m.layer.openPopup(), 1500);
           };
           res.appendChild(d);
         });
-      });
-    }
-
-    function setupFilters() {
-      document.getElementById('filter-seller').onchange = () => geoLayer.setStyle(getStyle);
-      document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
-    }
-
-    function updateUI(stats) {
-      const leg = document.getElementById('legend-container');
-      const sel = document.getElementById('filter-seller');
-      Object.entries(stats).sort((a, b) => b[1] - a[1]).forEach(([n, c]) => {
-        sel.add(new Option(n, n));
-        const item = document.createElement('div'); item.className = 'legend-item';
-        item.innerHTML = `<div class="color-box" style="background:${getSellerColor(n)}"></div><div class="seller-name">${n}</div><div class="count-badge">${c}</div>`;
-        item.onclick = () => { sel.value = n; sel.dispatchEvent(new Event('change')); };
-        leg.appendChild(item);
       });
     }
 
