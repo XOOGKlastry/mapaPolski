@@ -3,22 +3,22 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Monitorowania Sprzedaży PRO</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>System Monitorowania Sprzedaży Mobile</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root {
-      --sidebar-width: 360px;
       --primary: #0f172a;
       --accent: #2563eb;
       --danger: #ef4444;
       --surface: #ffffff;
-      --bg-map: #e5e5e5;
+      --bg-light: #f1f5f9;
       --border: #e2e8f0;
-      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+      --shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     body {
@@ -28,41 +28,132 @@
       display: flex;
       height: 100vh;
       overflow: hidden;
-      color: #334155;
+      color: var(--primary);
+      background: #000;
+      /* Tło pod mapą */
     }
 
-    /* --- SIDEBAR --- */
+    /* --- SIDEBAR (Panel boczny) --- */
     #sidebar {
-      width: var(--sidebar-width);
-      background: var(--surface);
+      position: absolute;
+      top: 0;
+      left: 0;
       height: 100%;
-      box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
-      z-index: 1001;
+      width: 340px;
+      max-width: 85%;
+      /* Na mobile zajmie max 85% szerokości */
+      background: var(--surface);
+      z-index: 2000;
+      box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
       display: flex;
       flex-direction: column;
-      padding: 24px;
-      box-sizing: border-box;
+      transform: translateX(-105%);
+      /* Domyślnie ukryty */
+      transition: var(--transition);
+      padding: 0;
     }
 
-    h2 {
-      margin: 0 0 24px 0;
-      font-size: 1.4rem;
-      color: var(--primary);
-      font-weight: 800;
-      letter-spacing: -0.5px;
+    /* Klasa otwierająca panel */
+    #sidebar.active {
+      transform: translateX(0);
     }
 
-    .control-group {
-      margin-bottom: 24px;
-      position: relative;
+    /* Nagłówek panelu */
+    .sidebar-header {
+      padding: 20px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Kontener na treść panelu */
+    .sidebar-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
+
+    /* --- ZWIJAKI (ACCORDION) --- */
+    details {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+    }
+
+    details[open] {
+      border-color: var(--accent);
+    }
+
+    summary {
+      list-style: none;
+      padding: 16px;
+      font-weight: 700;
+      font-size: 0.95rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      transition: background 0.2s;
+    }
+
+    /* Ikona strzałki w zwijaku */
+    summary::after {
+      content: '+';
+      font-size: 1.2rem;
+      color: var(--accent);
+      font-weight: 300;
+    }
+
+    details[open] summary::after {
+      content: '−';
+    }
+
+    summary:hover {
+      background: var(--bg-light);
+    }
+
+    /* Ukrycie domyślnego trójkąta */
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .details-body {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: #fcfcfc;
+    }
+
+    /* Pola formularzy */
     label {
       display: block;
       margin-bottom: 8px;
       font-size: 0.75rem;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
       color: #64748b;
       font-weight: 700;
     }
@@ -70,251 +161,36 @@
     input[type="text"],
     select {
       width: 100%;
-      padding: 14px 16px;
+      padding: 12px;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 0.95rem;
-      background: #f8fafc;
-      transition: all 0.2s;
+      border-radius: 8px;
+      font-size: 16px;
+      /* Zapobiega zoomowaniu na iPhone */
       box-sizing: border-box;
-      color: var(--primary);
+      background: white;
     }
 
     input:focus,
     select:focus {
       outline: none;
       border-color: var(--accent);
-      background: white;
-      box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
     }
 
-    /* Wyniki wyszukiwania */
-    #search-results {
-      position: absolute;
-      width: 100%;
-      background: white;
-      border: 1px solid var(--border);
-      border-top: none;
-      border-radius: 0 0 12px 12px;
-      max-height: 220px;
-      overflow-y: auto;
-      z-index: 2000;
-      display: none;
-      box-shadow: var(--shadow-lg);
-    }
-
-    .search-item {
-      padding: 12px 16px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      border-bottom: 1px solid #f1f5f9;
-    }
-
-    .search-item:hover {
-      background: #f1f5f9;
-      color: var(--accent);
-      font-weight: 600;
-    }
-
-    #legend-container {
-      flex-grow: 1;
-      overflow-y: auto;
-      margin-top: 10px;
-      padding-right: 5px;
-    }
-
-    .legend-item {
-      display: flex;
-      align-items: center;
-      padding: 12px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      border: 1px solid transparent;
-    }
-
-    .legend-item:hover {
-      background: #f8fafc;
-      border-color: var(--border);
-    }
-
-    .color-box {
-      width: 14px;
-      height: 14px;
-      border-radius: 4px;
-      margin-right: 12px;
-      flex-shrink: 0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .seller-name {
-      flex-grow: 1;
-      font-size: 0.9rem;
-      font-weight: 500;
-    }
-
-    .count-badge {
-      font-size: 0.75rem;
-      background: #e2e8f0;
-      padding: 3px 10px;
-      border-radius: 20px;
-      color: #475569;
-      font-weight: 700;
-    }
-
-    /* --- MAPA --- */
-    #map {
-      flex-grow: 1;
-      height: 100%;
-      background: #ddd;
-      position: relative;
-    }
-
-    /* --- POPUPY --- */
-    .leaflet-popup-content-wrapper {
-      background: white;
-      border-radius: 16px;
-      padding: 0;
-      box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.2);
-      overflow: hidden;
-    }
-
-    .leaflet-popup-content {
-      margin: 0;
-      width: 280px !important;
-      font-family: 'Inter', sans-serif;
-    }
-
-    .leaflet-popup-tip {
-      background: white;
-    }
-
-    .leaflet-container a.leaflet-popup-close-button {
-      top: 10px;
-      right: 10px;
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      background: #f1f5f9;
-      color: #64748b;
-      font-size: 18px;
-      line-height: 30px;
-      text-align: center;
-      padding: 0;
-      transition: all 0.2s;
-      z-index: 10;
-    }
-
-    .leaflet-container a.leaflet-popup-close-button:hover {
-      background: var(--danger);
-      color: white;
-    }
-
-    .popup-header {
-      background: #f8fafc;
-      padding: 20px 20px 15px 20px;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .popup-title {
-      font-weight: 800;
-      font-size: 1.25rem;
-      color: var(--primary);
-      display: block;
-      line-height: 1.2;
-    }
-
-    .popup-subtitle {
-      font-size: 0.8rem;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      font-weight: 700;
-      margin-top: 6px;
-      display: block;
-    }
-
-    .popup-body {
-      padding: 15px 20px;
-    }
-
-    .popup-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-      font-size: 0.9rem;
-      border-bottom: 1px dashed #f1f5f9;
-      padding-bottom: 4px;
-    }
-
-    .popup-row:last-child {
-      border: none;
-    }
-
-    .popup-label {
-      color: #64748b;
-      font-weight: 500;
-    }
-
-    .popup-val {
-      font-weight: 600;
-      color: #334155;
-      text-align: right;
-    }
-
-    .nav-btn {
-      display: block;
-      text-align: center;
-      margin: 15px 20px 20px;
-      padding: 12px;
-      border-radius: 10px;
-      background: var(--primary);
-      color: white;
-      text-decoration: none;
-      font-size: 0.9rem;
-      font-weight: 600;
-      transition: transform 0.1s;
-    }
-
-    .nav-btn:hover {
-      background: #1e293b;
-      transform: translateY(-2px);
-    }
-
-    /* --- BASE MAP SWITCHER --- */
-    .basemap-widget {
-      position: absolute;
-      bottom: 30px;
-      left: 30px;
-      z-index: 900;
-      background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 8px;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      display: flex;
-      gap: 8px;
+    /* Lista Map (Kafelki w zwijaku) */
+    .map-switcher-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
     }
 
     .map-card {
-      width: 75px;
-      height: 60px;
+      border: 2px solid transparent;
       border-radius: 8px;
+      overflow: hidden;
       cursor: pointer;
       position: relative;
-      overflow: hidden;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .map-card:hover {
-      transform: translateY(-3px);
-    }
-
-    .map-card.active {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+      height: 60px;
     }
 
     .map-card img {
@@ -326,78 +202,164 @@
     .map-card span {
       position: absolute;
       bottom: 0;
-      left: 0;
       width: 100%;
       background: rgba(0, 0, 0, 0.6);
       color: white;
       font-size: 10px;
       text-align: center;
-      padding: 3px 0;
-      font-weight: 600;
-      text-transform: uppercase;
+      padding: 2px 0;
     }
 
-    /* --- KAJ JO JE --- */
-    .kaj-jo-je-btn {
+    .map-card.active {
+      border-color: var(--accent);
+    }
+
+    /* Legenda */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      padding: 8px;
+      border-radius: 6px;
+      margin-bottom: 4px;
+    }
+
+    .color-box {
+      width: 16px;
+      height: 16px;
+      border-radius: 4px;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+
+    .seller-name {
+      flex-grow: 1;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .count-badge {
+      font-size: 0.75rem;
+      background: #e2e8f0;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-weight: 700;
+    }
+
+    /* --- MAPA I PRZYCISKI FAB (Floating Action Buttons) --- */
+    #map {
+      flex-grow: 1;
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
+
+    /* Kontener przycisków na dole */
+    .bottom-controls {
       position: absolute;
       bottom: 30px;
-      right: 30px;
-      z-index: 900;
+      left: 0;
+      width: 100%;
+      padding: 0 20px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      z-index: 1000;
+      pointer-events: none;
+      /* Żeby można było klikać w mapę pomiędzy przyciskami */
+    }
+
+    .fab-btn {
+      pointer-events: auto;
       background: var(--primary);
       color: white;
       border: none;
-      padding: 14px 24px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 0.95rem;
-      box-shadow: 0 10px 20px rgba(15, 23, 42, 0.3);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
       cursor: pointer;
-      transition: all 0.2s;
       display: flex;
       align-items: center;
-      gap: 10px;
+      justify-content: center;
+      transition: transform 0.1s;
     }
 
-    .kaj-jo-je-btn:hover {
-      background: var(--accent);
-      transform: translateY(-2px);
+    .fab-btn:active {
+      transform: scale(0.95);
     }
 
-    .kaj-jo-je-btn svg {
-      width: 20px;
-      height: 20px;
+    /* Przycisk Menu (Lewy) */
+    .btn-menu {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 24px;
     }
 
-    .city-label {
-      background: transparent !important;
-      border: none !important;
-      box-shadow: none !important;
-      font-weight: 800;
-      color: var(--primary);
-      text-shadow: 0 2px 4px rgba(255, 255, 255, 1);
-      font-size: 13px;
-      display: none;
-      margin-top: -8px;
-      font-family: 'Inter', sans-serif;
+    /* Przycisk Lokalizacji (Prawy) */
+    .btn-loc {
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 700;
+      gap: 8px;
     }
 
-    .city-label::before {
-      display: none !important;
-    }
-
-    .show-labels .city-label {
-      display: block;
-    }
-
-    #loader {
-      position: absolute;
+    /* Tło przyciemniające (Overlay) */
+    #overlay {
+      position: fixed;
       top: 0;
       left: 0;
       width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* Wyniki wyszukiwania */
+    #search-results {
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-top: none;
+    }
+
+    .search-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    /* Popupy */
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+    }
+
+    .nav-btn {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      padding: 12px;
+      background: var(--accent);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    /* Loader */
+    #loader {
+      position: absolute;
+      top: 0;
+      width: 100%;
       height: 4px;
       background: linear-gradient(90deg, var(--accent), #60a5fa);
-      z-index: 2000;
-      display: none;
+      z-index: 3000;
     }
   </style>
 </head>
@@ -406,52 +368,79 @@
 
   <div id="loader"></div>
 
+  <div id="overlay" onclick="toggleSidebar()"></div>
+
   <div id="sidebar">
-    <h2>Panel Sprzedaży</h2>
-    <div class="control-group">
-      <label for="search">Znajdź powiat</label>
-      <input type="text" id="search" placeholder="Wpisz nazwę powiatu..." autocomplete="off">
-      <div id="search-results"></div>
+    <div class="sidebar-header">
+      <h2>Panel Sterowania</h2>
+      <button class="close-btn" onclick="toggleSidebar()">✕</button>
     </div>
-    <div class="control-group">
-      <label for="filter-seller">Opiekun regionu</label>
-      <select id="filter-seller">
-        <option value="all">Wszyscy opiekunowie</option>
-      </select>
+
+    <div class="sidebar-content">
+
+      <details open>
+        <summary>🔍 Znajdź Obszar</summary>
+        <div class="details-body">
+          <input type="text" id="search" placeholder="Wpisz nazwę powiatu..." autocomplete="off">
+          <div id="search-results"></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>👤 Filtruj Opiekuna</summary>
+        <div class="details-body">
+          <label>Wybierz z listy:</label>
+          <select id="filter-seller">
+            <option value="all">Wszyscy opiekunowie</option>
+          </select>
+          <div style="margin-top:15px">
+            <label>Przezroczystość:</label>
+            <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7" style="width: 100%;">
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>🗺️ Typ Mapy</summary>
+        <div class="details-body map-switcher-grid">
+          <div class="map-card active" onclick="setBasemap('osm', this)">
+            <img src="https://tile.openstreetmap.org/6/33/21.png"><span>Drogowa</span>
+          </div>
+          <div class="map-card" onclick="setBasemap('dark', this)">
+            <img src="https://a.basemaps.cartocdn.com/dark_all/6/33/21.png"><span>Ciemna</span>
+          </div>
+          <div class="map-card" onclick="setBasemap('sat', this)">
+            <img
+              src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"><span>Satelita</span>
+          </div>
+          <div class="map-card" onclick="setBasemap('light', this)">
+            <img src="https://a.basemaps.cartocdn.com/light_all/6/33/21.png"><span>Jasna</span>
+          </div>
+        </div>
+      </details>
+
+      <details>
+        <summary>📊 Statystyki</summary>
+        <div class="details-body">
+          <div id="legend-container"></div>
+        </div>
+      </details>
+
     </div>
-    <div class="control-group">
-      <label>Widoczność warstw</label>
-      <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7"
-        style="width: 100%; accent-color: var(--accent);">
-    </div>
-    <hr style="border: 0; border-top: 1px solid var(--border); margin: 20px 0;">
-    <label>Statystyki regionów</label>
-    <div id="legend-container"></div>
   </div>
 
-  <div id="map">
+  <div id="map"></div>
 
-    <div class="basemap-widget">
-      <div class="map-card active" onclick="setBasemap('osm', this)">
-        <img src="https://tile.openstreetmap.org/6/33/21.png" alt="Drogowa">
-        <span>Drogowa</span>
-      </div>
-      <div class="map-card" onclick="setBasemap('dark', this)">
-        <img src="https://a.basemaps.cartocdn.com/dark_all/6/33/21.png" alt="Ciemna">
-        <span>Ciemna</span>
-      </div>
-      <div class="map-card" onclick="setBasemap('sat', this)">
-        <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"
-          alt="Satelita">
-        <span>Satelita</span>
-      </div>
-    </div>
+  <div class="bottom-controls">
+    <button class="fab-btn btn-menu" onclick="toggleSidebar()">
+      ☰
+    </button>
 
-    <button class="kaj-jo-je-btn" onclick="locateUser()">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+    <button class="fab-btn btn-loc" onclick="locateUser()">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round"
-          d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
       </svg>
       KAJ JO JE
     </button>
@@ -472,14 +461,20 @@
     const sellerColors = {};
     const colors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#475569'];
 
-    // Definicje warstw map - USUNIĘTA 'light', DODANA 'osm' jako główna
     const baseLayers = {
       osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }),
       dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB' }),
-      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' })
+      sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' }),
+      light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB' })
     };
 
+    function toggleSidebar() {
+      document.getElementById('sidebar').classList.toggle('active');
+      document.getElementById('overlay').classList.toggle('active');
+    }
+
     function cleanName(n) { return n ? n.toString().toLowerCase().trim().replace("powiat", "").replace("miasto", "").trim() : ""; }
+
     function getSellerColor(s) {
       if (!s) return '#cbd5e1';
       if (!sellerColors[s]) sellerColors[s] = colors[Object.keys(sellerColors).length % colors.length];
@@ -492,11 +487,7 @@
       const filterSeller = document.getElementById('filter-seller').value;
       const opacityVal = document.getElementById('opacity-range').value;
       const isMatch = filterSeller === 'all' || (row && row.Sprzedawca === filterSeller);
-
-      return {
-        fillColor: getSellerColor(row ? row.Sprzedawca : null),
-        weight: 1, color: 'white', fillOpacity: isMatch ? opacityVal : 0.05, opacity: isMatch ? 1 : 0.1
-      };
+      return { fillColor: getSellerColor(row ? row.Sprzedawca : null), weight: 1, color: 'white', fillOpacity: isMatch ? opacityVal : 0.05, opacity: isMatch ? 1 : 0.1 };
     }
 
     function setBasemap(type, el) {
@@ -512,19 +503,12 @@
 
       map = L.map('map', { zoomControl: false }).setView([52.06, 19.48], 6);
       L.control.zoom({ position: 'topright' }).addTo(map);
-
-      // USTAWIENIE DOMYŚLNEJ MAPY NA OSM
       currentBasemap = baseLayers.osm;
       map.addLayer(currentBasemap);
-
-      map.createPane('citiesPane');
-      map.getPane('citiesPane').style.zIndex = 650;
+      map.createPane('citiesPane'); map.getPane('citiesPane').style.zIndex = 650;
 
       try {
-        const [csvRes, geoRes, citiesRes] = await Promise.all([
-          fetch(SHEET_URL), fetch(GEOJSON_FILE), fetch(CITIES_GEOJSON)
-        ]);
-
+        const [csvRes, geoRes, citiesRes] = await Promise.all([fetch(SHEET_URL), fetch(GEOJSON_FILE), fetch(CITIES_GEOJSON)]);
         const csvText = await csvRes.text();
         const powiatyGeo = await geoRes.json();
         const citiesGeo = await citiesRes.json();
@@ -534,6 +518,7 @@
         const stats = {};
         parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
 
+        // Warstwa Powiatów
         geoLayer = L.geoJson(powiatyGeo, {
           style: getStyle,
           onEachFeature: (f, l) => {
@@ -541,74 +526,49 @@
             powiatyList.push({ name: name, layer: l });
 
             const data = fullData[cleanName(name)];
-            const seller = data ? data.Sprzedawca : "Brak danych";
-
-            let html = `
-              <div class="popup-header">
-                <span class="popup-title">${name}</span>
-                <span class="popup-subtitle">${seller}</span>
-              </div>
-              <div class="popup-body">`;
-
+            let html = `<div style="font-weight:bold; font-size:1.1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:5px">${name}</div>`;
             if (data) {
-              Object.entries(data).forEach(([k, v]) => {
-                if (k !== 'Nazwa' && k !== 'Sprzedawca' && v) html += `<div class="popup-row"><span class="popup-label">${k}</span> <span class="popup-val">${v}</span></div>`;
-              });
+              html += `<div style="color:#2563eb; font-weight:700; margin-bottom:5px">${data.Sprzedawca || 'Brak'}</div>`;
+              Object.entries(data).forEach(([k, v]) => { if (k !== 'Nazwa' && k !== 'Sprzedawca') html += `<div><span style="color:#666">${k}:</span> <b>${v}</b></div>`; });
             }
-            html += `</div>`;
             l.bindPopup(html);
-            l.on('mouseover', (e) => { e.target.setStyle({ weight: 3, color: '#1e293b', fillOpacity: 0.9 }); });
-            l.on('mouseout', (e) => geoLayer.resetStyle(e.target));
+            l.on('click', (e) => {
+              // Na mobile po kliknięciu centrujemy mapę
+              map.flyToBounds(e.target.getBounds(), { padding: [20, 20], maxZoom: 11 });
+            });
           }
         }).addTo(map);
 
+        // Warstwa Miast
         citiesLayer = L.geoJson(citiesGeo, {
           pane: 'citiesPane',
-          pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 5, fillColor: "#fff", color: "#0f172a", weight: 2, fillOpacity: 1 }),
+          pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
           onEachFeature: (f, l) => {
-            const props = f.properties;
-            const cityName = props.NAZWA || props.name || "Miejscowość";
-            l.bindTooltip(cityName, { permanent: true, direction: 'top', className: 'city-label', offset: [0, -8] });
-            let html = `<div class="popup-header"><span class="popup-title">${cityName}</span><span class="popup-subtitle">Miejscowość</span></div><div class="popup-body">`;
-            Object.keys(props).forEach(key => { if (key !== 'NAZWA' && key !== 'name') html += `<div class="popup-row"><span class="popup-label">${key}</span> <span class="popup-val">${props[key]}</span></div>`; });
-            html += `</div>`;
+            const name = f.properties.NAZWA || f.properties.name;
             const lat = l.getLatLng().lat, lng = l.getLatLng().lng;
-            html += `<a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">Prowadź do</a>`;
+            const html = `<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">🚗 Prowadź do</a>`;
             l.bindPopup(html);
-            l.on('mouseover', function (e) { this.setRadius(9); this.setStyle({ weight: 3, color: '#2563eb' }); L.DomEvent.stopPropagation(e); });
-            l.on('mouseout', function (e) { this.setRadius(5); this.setStyle({ weight: 2, color: '#0f172a' }); L.DomEvent.stopPropagation(e); });
           }
         }).addTo(map);
 
         updateUI(stats);
         setupSearch();
         setupFilters();
-        map.on('zoomend', handleZoomLabels);
-        handleZoomLabels();
         document.getElementById('loader').style.display = 'none';
 
-      } catch (err) { console.error(err); document.getElementById('loader').style.display = 'none'; }
+      } catch (err) { console.error(err); }
     }
 
     function locateUser() {
-      map.locate({ setView: true, maxZoom: 12, enableHighAccuracy: true });
+      map.locate({ setView: true, maxZoom: 13, enableHighAccuracy: true });
       map.once('locationfound', function (e) {
         if (userLocationMarker) map.removeLayer(userLocationMarker);
         userLocationMarker = L.layerGroup([
-          L.circle(e.latlng, { radius: e.accuracy / 2, color: '#2563eb', fillColor: '#2563eb', fillOpacity: 0.2 }),
-          L.circleMarker(e.latlng, { radius: 8, fillColor: '#2563eb', color: 'white', weight: 3, fillOpacity: 1 })
+          L.circle(e.latlng, { radius: e.accuracy / 2, color: '#2563eb' }),
+          L.circleMarker(e.latlng, { radius: 8, fillColor: '#2563eb', color: 'white', fillOpacity: 1 })
         ]).addTo(map);
-        L.popup({ offset: [0, -10] })
-          .setLatLng(e.latlng)
-          .setContent('<div style="text-align:center; padding: 10px;"><strong style="font-size:1.2rem; color:#2563eb;">TU ŻEŚ JES!</strong></div>')
-          .openOn(map);
+        L.popup().setLatLng(e.latlng).setContent('<b>TU ŻEŚ JES!</b>').openOn(map);
       });
-    }
-
-    function handleZoomLabels() {
-      const zoom = map.getZoom();
-      const mapDiv = document.getElementById('map');
-      if (zoom > 11) mapDiv.classList.add('show-labels'); else mapDiv.classList.remove('show-labels');
     }
 
     function setupSearch() {
@@ -617,39 +577,35 @@
       input.addEventListener('input', (e) => {
         const q = cleanName(e.target.value);
         res.innerHTML = '';
-        if (q.length < 2) { res.style.display = 'none'; return; }
-        const m = powiatyList.filter(p => cleanName(p.name).includes(q)).slice(0, 10);
-        if (m.length > 0) {
-          res.style.display = 'block';
-          m.forEach(x => {
-            const d = document.createElement('div'); d.className = 'search-item'; d.textContent = x.name;
-            d.onclick = () => {
-              input.value = x.name; res.style.display = 'none';
-              map.flyToBounds(x.layer.getBounds(), { maxZoom: 13, duration: 1.5 });
-              setTimeout(() => { x.layer.openPopup(); x.layer.setStyle({ color: '#2563eb', weight: 4 }); setTimeout(() => geoLayer.resetStyle(x.layer), 3000); }, 1600);
-            };
-            res.appendChild(d);
-          });
-        } else res.style.display = 'none';
+        if (q.length < 2) return;
+        const matches = powiatyList.filter(p => cleanName(p.name).includes(q)).slice(0, 5);
+        matches.forEach(m => {
+          const d = document.createElement('div'); d.className = 'search-item'; d.innerText = m.name;
+          d.onclick = () => {
+            input.value = m.name; res.innerHTML = '';
+            toggleSidebar(); // Zamknij panel po wyborze
+            map.flyToBounds(m.layer.getBounds(), { maxZoom: 12 });
+            setTimeout(() => m.layer.openPopup(), 1500);
+          };
+          res.appendChild(d);
+        });
       });
-      document.addEventListener('click', (e) => { if (!input.contains(e.target)) res.style.display = 'none'; });
     }
 
     function setupFilters() {
-      const update = () => geoLayer.setStyle(getStyle);
-      document.getElementById('filter-seller').onchange = update;
-      document.getElementById('opacity-range').oninput = update;
+      document.getElementById('filter-seller').onchange = () => geoLayer.setStyle(getStyle);
+      document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
     }
 
     function updateUI(stats) {
       const leg = document.getElementById('legend-container');
       const sel = document.getElementById('filter-seller');
       Object.entries(stats).sort((a, b) => b[1] - a[1]).forEach(([n, c]) => {
-        const div = document.createElement('div'); div.className = 'legend-item';
-        div.innerHTML = `<div class="color-box" style="background:${getSellerColor(n)}"></div><div class="seller-name">${n}</div><div class="count-badge">${c}</div>`;
-        div.onclick = () => { sel.value = n; sel.dispatchEvent(new Event('change')); };
-        leg.appendChild(div);
         sel.add(new Option(n, n));
+        const item = document.createElement('div'); item.className = 'legend-item';
+        item.innerHTML = `<div class="color-box" style="background:${getSellerColor(n)}"></div><div class="seller-name">${n}</div><div class="count-badge">${c}</div>`;
+        item.onclick = () => { sel.value = n; sel.dispatchEvent(new Event('change')); };
+        leg.appendChild(item);
       });
     }
 
