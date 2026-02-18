@@ -13,10 +13,10 @@
     .legend {
       background: white; padding: 12px; line-height: 24px;
       border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2);
+      max-height: 80vh; overflow-y: auto;
     }
-    .legend i { width: 18px; height: 18px; float: left; margin-right: 10px; border-radius: 3px; }
+    .legend i { width: 18px; height: 18px; float: left; margin-right: 10px; border-radius: 3px; border: 1px solid #ccc; }
 
-    /* Styl dla ładniejszego okienka popup */
     .custom-popup b { color: #2c3e50; text-transform: uppercase; font-size: 10px; display: block; margin-top: 5px; }
     .custom-popup span { font-size: 14px; color: #34495e; display: block; margin-bottom: 2px; }
     .popup-title { font-size: 16px !important; font-weight: bold; border-bottom: 2px solid #eee; margin-bottom: 10px !important; padding-bottom: 5px; }
@@ -33,26 +33,30 @@
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
     const GEOJSON_FILE = 'powiaty4205.geojson';
 
+    // Inicjalizacja mapy z włączonym zoomem kółkiem myszy
     const map = L.map('map', { 
       preferCanvas: true,
-      scrollWheelZoom: false,
-      tap: true 
-    }).setView([52.06, 19.48], window.innerWidth < 600 ? 5 : 6);
+      scrollWheelZoom: true, // Poprawione przybliżanie
+      wheelDebounceTime: 150
+    }).setView([52.06, 19.48], 6);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OSM'
     }).addTo(map);
 
+    // Paleta kolorów dla automatycznej legendy
+    const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#1abc9c', '#34495e'];
+    const colorMap = {};
+
     function getColor(seller) {
-      const s = seller ? seller.toString().trim().toLowerCase() : '';
-      switch (s) {
-        case 'aleksander': return '#3498db';
-        case 'dominik':    return '#2ecc71';
-        case 'michał':     return '#f1c40f';
-        case 'dawid':      return '#e74c3c';
-        case 'dawidek':          return '#e67e22';
-        default:           return '#bdc3c7';
+      if (!seller) return '#bdc3c7';
+      const s = seller.toString().trim();
+      if (!colorMap[s]) {
+        // Przypisz kolor z palety lub generuj losowy jeśli braknie stałych
+        const idx = Object.keys(colorMap).length;
+        colorMap[s] = colors[idx % colors.length];
       }
+      return colorMap[s];
     }
 
     function cleanName(name) {
@@ -72,11 +76,15 @@
 
         const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
         
-        // Zapisujemy cały wiersz danych dla każdego powiatu
         const dataMap = {};
+        const uniqueSellers = new Set();
+
         parsed.forEach(row => {
           if (row.Nazwa) {
             dataMap[cleanName(row.Nazwa)] = row;
+            if (row.Sprzedawca && row.Sprzedawca.trim() !== "") {
+              uniqueSellers.add(row.Sprzedawca.trim());
+            }
           }
         });
 
@@ -93,14 +101,11 @@
             const rawName = feature.properties.nazwa || feature.properties.Nazwa || "Nieznany";
             const row = dataMap[cleanName(rawName)];
 
-            // Tworzenie treści Popup z wszystkich kolumn arkusza
             let popupContent = `<div class="custom-popup">`;
             popupContent += `<span class="popup-title">${rawName}</span>`;
 
             if (row) {
-              // Pętla po wszystkich kluczach (nagłówkach) z arkusza
               Object.keys(row).forEach(key => {
-                // Nie wyświetlamy ponownie nazwy powiatu, jeśli już jest w tytule
                 if (key.toLowerCase() !== 'nazwa' && row[key]) {
                   popupContent += `<b>${key}:</b><span>${row[key]}</span>`;
                 }
@@ -123,22 +128,31 @@
           }
         }).addTo(map);
 
-        // Legenda
+        // Automatyczne dopasowanie widoku do wczytanych powiatów
+        if (powiatyData.features.length > 0) {
+            map.fitBounds(geoLayer.getBounds());
+        }
+
+        // --- AUTOMATYCZNA LEGENDA ---
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = () => {
           const div = L.DomUtil.create('div', 'legend');
-          const sellers = ['Dominik', 'Michał', 'Aleksander', 'Dawid', 'Dawidek'];
           div.innerHTML = '<strong>Opiekunowie:</strong><br>';
-          sellers.forEach(s => {
+          
+          // Sortowanie alfabetyczne sprzedawców
+          const sortedSellers = Array.from(uniqueSellers).sort();
+          
+          sortedSellers.forEach(s => {
             div.innerHTML += `<i style="background:${getColor(s)}"></i> ${s}<br>`;
           });
+          
           div.innerHTML += `<i style="background:${getColor('')}"></i> Brak danych`;
           return div;
         };
         legend.addTo(map);
 
       } catch (e) {
-        console.error("Błąd:", e);
+        console.error("Błąd ładowania danych:", e);
       }
     }
 
@@ -146,5 +160,3 @@
   </script>
 </body>
 </html>
-
-
