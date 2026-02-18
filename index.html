@@ -186,7 +186,7 @@
       z-index: 1;
     }
 
-    /* --- NOWOCZESNA LEGENDA (POPRAWIONA WYSOKOŚĆ) --- */
+    /* --- LEGENDA --- */
     #floating-legend {
       position: absolute;
       z-index: 1000;
@@ -200,7 +200,6 @@
       /* DESKTOP */
       bottom: 30px;
       left: 90px;
-      /* Zwiększona wysokość maksymalna dla desktopu */
       max-height: 80vh;
       width: 220px;
       overflow-y: auto;
@@ -256,7 +255,6 @@
       font-weight: 500;
     }
 
-    /* --- MOBILE STYLES DLA LEGENDY --- */
     @media (max-width: 768px) {
       #floating-legend {
         bottom: auto;
@@ -265,22 +263,12 @@
         right: 10px;
         width: auto;
         max-width: none;
-
-        /* ZMIANA: Auto height i wrapowanie */
         height: auto;
         max-height: 35vh;
-        /* Max 35% ekranu żeby nie zasłonić mapy */
-
         flex-direction: row;
         flex-wrap: wrap;
-        /* To sprawia że spadają do nowej linii */
         justify-content: center;
-        /* Wyśrodkowanie przycisków */
-
         overflow-y: auto;
-        /* Przewijanie pionowe jak jest ich bardzo dużo */
-        overflow-x: hidden;
-
         padding: 8px;
         border-radius: 16px;
       }
@@ -290,18 +278,10 @@
         border-radius: 20px;
         background: rgba(255, 255, 255, 0.8);
         margin: 3px;
-        /* Odstępy między kafelkami */
         border: 1px solid #eee;
         flex-grow: 1;
-        /* Rozciągnij żeby wypełnić luki */
         justify-content: center;
         max-width: 45%;
-        /* Żeby na pewno mieściły się min 2 w rzędzie */
-      }
-
-      .legend-chip.active {
-        background: var(--primary);
-        border-color: var(--primary);
       }
     }
 
@@ -366,7 +346,6 @@
       height: 18px;
     }
 
-    /* --- FAB CONTROLS --- */
     .bottom-controls {
       position: absolute;
       bottom: 30px;
@@ -477,6 +456,13 @@
         <div class="details-body">
           <label>Przezroczystość warstw:</label>
           <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7" style="width: 100%;">
+
+          <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #eee; display:flex; align-items:center;">
+            <input type="checkbox" id="toggle-cities" checked
+              style="width:20px; height:20px; margin-right:10px; accent-color:var(--primary);">
+            <label for="toggle-cities"
+              style="margin:0; font-size:0.9rem; cursor:pointer; color:#333; font-weight:600;">Pokaż miasta</label>
+          </div>
         </div>
       </details>
       <details>
@@ -501,7 +487,6 @@
   </div>
 
   <div id="map"></div>
-
   <div id="floating-legend"></div>
 
   <div class="bottom-controls">
@@ -576,8 +561,12 @@
       L.control.zoom({ position: 'topright' }).addTo(map);
 
       map.on('zoomend', function () {
-        if (map.getZoom() > 11) document.getElementById('map').classList.add('show-labels');
-        else document.getElementById('map').classList.remove('show-labels');
+        // Pokaż etykiety tylko jeśli warstwa miast jest na mapie I zoom jest odpowiedni
+        if (map.hasLayer(citiesLayer) && map.getZoom() > 11) {
+          document.getElementById('map').classList.add('show-labels');
+        } else {
+          document.getElementById('map').classList.remove('show-labels');
+        }
       });
 
       currentBasemap = baseLayers.osm;
@@ -638,7 +627,19 @@
 
         createFloatingLegend(stats);
         setupSearch();
+
+        // Listenery
         document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
+
+        // NOWA LOGIKA CHECKBOXA
+        document.getElementById('toggle-cities').onchange = (e) => {
+          if (e.target.checked) {
+            if (!map.hasLayer(citiesLayer)) map.addLayer(citiesLayer);
+          } else {
+            if (map.hasLayer(citiesLayer)) map.removeLayer(citiesLayer);
+          }
+        };
+
         document.getElementById('loader').style.display = 'none';
 
       } catch (err) { console.error(err); }
