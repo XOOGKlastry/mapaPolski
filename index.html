@@ -143,7 +143,6 @@
       border-color: var(--accent);
     }
 
-    /* --- MAP SWITCHER --- */
     .map-switcher-grid {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
@@ -180,7 +179,6 @@
       border-color: var(--accent);
     }
 
-    /* --- MAP LAYOUT --- */
     #map {
       flex-grow: 1;
       height: 100%;
@@ -188,7 +186,7 @@
       z-index: 1;
     }
 
-    /* --- NOWOCZESNA LEGENDA (HYBRYDOWA) --- */
+    /* --- NOWOCZESNA LEGENDA (POPRAWIONA WYSOKOŚĆ) --- */
     #floating-legend {
       position: absolute;
       z-index: 1000;
@@ -198,11 +196,12 @@
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
       border: 1px solid rgba(255, 255, 255, 0.5);
       transition: all 0.3s ease;
-      /* Domyślny styl DESKTOP */
+
+      /* DESKTOP */
       bottom: 30px;
       left: 90px;
-      /* Obok przycisku menu */
-      max-height: 300px;
+      /* Zwiększona wysokość maksymalna dla desktopu */
+      max-height: 80vh;
       width: 220px;
       overflow-y: auto;
       padding: 10px;
@@ -211,15 +210,14 @@
       gap: 5px;
     }
 
-    /* Styl pojedynczego elementu legendy */
     .legend-chip {
       display: flex;
       align-items: center;
-      padding: 6px 10px;
+      padding: 8px 12px;
       border-radius: 8px;
       cursor: pointer;
       transition: background 0.2s;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       white-space: nowrap;
     }
 
@@ -236,7 +234,7 @@
       width: 12px;
       height: 12px;
       border-radius: 50%;
-      margin-right: 8px;
+      margin-right: 10px;
       flex-shrink: 0;
       border: 1px solid rgba(0, 0, 0, 0.1);
     }
@@ -258,42 +256,47 @@
       font-weight: 500;
     }
 
-    /* --- STYLE MOBILE DLA LEGENDY --- */
+    /* --- MOBILE STYLES DLA LEGENDY --- */
     @media (max-width: 768px) {
       #floating-legend {
         bottom: auto;
         top: 10px;
-        /* Na górze ekranu */
         left: 10px;
         right: 10px;
         width: auto;
         max-width: none;
-        height: 50px;
-        flex-direction: row;
-        /* Poziomy układ */
-        align-items: center;
-        overflow-x: auto;
-        /* Przewijanie poziome */
-        overflow-y: hidden;
-        white-space: nowrap;
-        padding: 0 5px;
-        border-radius: 50px;
-        /* Kapsułka */
-        /* Ukrycie paska przewijania */
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-      }
 
-      #floating-legend::-webkit-scrollbar {
-        display: none;
+        /* ZMIANA: Auto height i wrapowanie */
+        height: auto;
+        max-height: 35vh;
+        /* Max 35% ekranu żeby nie zasłonić mapy */
+
+        flex-direction: row;
+        flex-wrap: wrap;
+        /* To sprawia że spadają do nowej linii */
+        justify-content: center;
+        /* Wyśrodkowanie przycisków */
+
+        overflow-y: auto;
+        /* Przewijanie pionowe jak jest ich bardzo dużo */
+        overflow-x: hidden;
+
+        padding: 8px;
+        border-radius: 16px;
       }
 
       .legend-chip {
-        padding: 6px 14px;
+        padding: 6px 12px;
         border-radius: 20px;
-        background: rgba(255, 255, 255, 0.5);
-        margin: 0 3px;
+        background: rgba(255, 255, 255, 0.8);
+        margin: 3px;
+        /* Odstępy między kafelkami */
         border: 1px solid #eee;
+        flex-grow: 1;
+        /* Rozciągnij żeby wypełnić luki */
+        justify-content: center;
+        max-width: 45%;
+        /* Żeby na pewno mieściły się min 2 w rzędzie */
       }
 
       .legend-chip.active {
@@ -499,8 +502,7 @@
 
   <div id="map"></div>
 
-  <div id="floating-legend">
-  </div>
+  <div id="floating-legend"></div>
 
   <div class="bottom-controls">
     <button class="fab-btn btn-menu" onclick="toggleSidebar()">☰</button>
@@ -646,22 +648,17 @@
       const legend = document.getElementById('floating-legend');
       legend.innerHTML = '';
 
-      // Opcja "Wszyscy"
       const allItem = document.createElement('div');
       allItem.className = 'legend-chip active';
       allItem.innerHTML = `<div class="chip-color" style="background:#000"></div><div class="chip-label">Wszyscy</div>`;
-      allItem.onclick = function () {
-        setActiveFilter('all', this);
-      };
+      allItem.onclick = function () { setActiveFilter('all', this); };
       legend.appendChild(allItem);
 
       Object.entries(stats).sort((a, b) => b[1] - a[1]).forEach(([n, c]) => {
         const item = document.createElement('div');
         item.className = 'legend-chip';
         item.innerHTML = `<div class="chip-color" style="background:${getSellerColor(n)}"></div><div class="chip-label">${n}</div><div class="chip-count">${c}</div>`;
-        item.onclick = function () {
-          setActiveFilter(n, this);
-        };
+        item.onclick = function () { setActiveFilter(n, this); };
         legend.appendChild(item);
       });
     }
@@ -669,8 +666,6 @@
     function setActiveFilter(seller, elem) {
       activeSellerFilter = seller;
       geoLayer.setStyle(getStyle);
-
-      // Aktualizacja UI
       document.querySelectorAll('.legend-chip').forEach(c => c.classList.remove('active'));
       elem.classList.add('active');
     }
