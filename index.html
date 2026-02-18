@@ -29,30 +29,31 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-  <script>
+<script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
     const GEOJSON_FILE = 'powiaty4205.geojson';
 
-    // Inicjalizacja mapy z włączonym zoomem kółkiem myszy
+    // KONFIGURACJA MAPY - NAPRAWIONY SCROLL
     const map = L.map('map', { 
       preferCanvas: true,
-      scrollWheelZoom: true, // Poprawione przybliżanie
-      wheelDebounceTime: 150
+      scrollWheelZoom: true, // Włączone przybliżanie kółkiem
+      wheelDebounceTime: 50, // Szybsza reakcja na kółko
+      dragging: true,        // Włączone przesuwanie
+      tap: false             // Wyłączone 'tap' (rozwiązuje problemy na iOS/Chrome)
     }).setView([52.06, 19.48], 6);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OSM'
     }).addTo(map);
 
-    // Paleta kolorów dla automatycznej legendy
-    const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#1abc9c', '#34495e'];
+    // Dynamiczne kolory dla legendy
+    const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#1abc9c', '#d35400', '#27ae60'];
     const colorMap = {};
 
     function getColor(seller) {
-      if (!seller) return '#bdc3c7';
+      if (!seller || seller.trim() === "") return '#bdc3c7';
       const s = seller.toString().trim();
       if (!colorMap[s]) {
-        // Przypisz kolor z palety lub generuj losowy jeśli braknie stałych
         const idx = Object.keys(colorMap).length;
         colorMap[s] = colors[idx % colors.length];
       }
@@ -73,7 +74,6 @@
 
         const csvText = await csvResponse.text();
         const powiatyData = await geoResponse.json();
-
         const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
         
         const dataMap = {};
@@ -101,9 +101,7 @@
             const rawName = feature.properties.nazwa || feature.properties.Nazwa || "Nieznany";
             const row = dataMap[cleanName(rawName)];
 
-            let popupContent = `<div class="custom-popup">`;
-            popupContent += `<span class="popup-title">${rawName}</span>`;
-
+            let popupContent = `<div class="custom-popup"><span class="popup-title">${rawName}</span>`;
             if (row) {
               Object.keys(row).forEach(key => {
                 if (key.toLowerCase() !== 'nazwa' && row[key]) {
@@ -111,15 +109,15 @@
                 }
               });
             } else {
-              popupContent += `<span>Brak dodatkowych danych w arkuszu.</span>`;
+              popupContent += `<span>Brak danych w arkuszu.</span>`;
             }
             popupContent += `</div>`;
 
             layer.bindPopup(popupContent);
-            
-            layer.on('click', function () {
+            layer.on('click', function (e) {
               this.setStyle({ fillOpacity: 0.9, weight: 3 });
               this.openPopup();
+              L.DomEvent.stopPropagation(e); // Zapobiega dziwnym zachowaniom mapy przy kliku
             });
 
             layer.on('popupclose', function() {
@@ -128,35 +126,31 @@
           }
         }).addTo(map);
 
-        // Automatyczne dopasowanie widoku do wczytanych powiatów
-        if (powiatyData.features.length > 0) {
-            map.fitBounds(geoLayer.getBounds());
-        }
+        // Automatyczne dopasowanie widoku
+        map.fitBounds(geoLayer.getBounds());
 
-        // --- AUTOMATYCZNA LEGENDA ---
+        // --- DYNAMICZNA LEGENDA ---
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = () => {
           const div = L.DomUtil.create('div', 'legend');
-          div.innerHTML = '<strong>Opiekunowie:</strong><br>';
+          div.innerHTML = '<strong>Sprzedawcy:</strong><br>';
           
-          // Sortowanie alfabetyczne sprzedawców
           const sortedSellers = Array.from(uniqueSellers).sort();
-          
           sortedSellers.forEach(s => {
-            div.innerHTML += `<i style="background:${getColor(s)}"></i> ${s}<br>`;
+            div.innerHTML += `<div><i style="background:${getColor(s)}"></i> ${s}</div>`;
           });
-          
-          div.innerHTML += `<i style="background:${getColor('')}"></i> Brak danych`;
+          div.innerHTML += `<div><i style="background:${getColor('')}"></i> Pozostałe</div>`;
           return div;
         };
         legend.addTo(map);
 
       } catch (e) {
-        console.error("Błąd ładowania danych:", e);
+        console.error("Błąd:", e);
       }
     }
 
     loadProject();
-  </script>
+</script>
 </body>
 </html>
+
