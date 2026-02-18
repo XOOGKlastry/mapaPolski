@@ -4,22 +4,77 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Mapa Sprzedaży - Pełne Dane</title>
+  <title>Mapa Sprzedaży - Ortofoto i Przezroczystość</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    body { margin: 0; padding: 0; font-family: sans-serif; }
-    #map { height: 100vh; width: 100%; background: #f0f0f0; }
-    
-    .legend {
-      background: white; padding: 12px; line-height: 24px;
-      border-radius: 8px; box-shadow: 0 0 15px rgba(0,0,0,0.2);
-      max-height: 80vh; overflow-y: auto;
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
     }
-    .legend i { width: 18px; height: 18px; float: left; margin-right: 10px; border-radius: 3px; border: 1px solid #ccc; }
 
-    .custom-popup b { color: #2c3e50; text-transform: uppercase; font-size: 10px; display: block; margin-top: 5px; }
-    .custom-popup span { font-size: 14px; color: #34495e; display: block; margin-bottom: 2px; }
-    .popup-title { font-size: 16px !important; font-weight: bold; border-bottom: 2px solid #eee; margin-bottom: 10px !important; padding-bottom: 5px; }
+    #map {
+      height: 100vh;
+      width: 100%;
+      background: #f0f0f0;
+    }
+
+    /* Styl Legendy */
+    .legend {
+      background: white;
+      padding: 12px;
+      line-height: 24px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      max-height: 50vh;
+      overflow-y: auto;
+    }
+
+    .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 10px;
+      border-radius: 3px;
+      border: 1px solid #ccc;
+    }
+
+    /* Styl Panelu Przezroczystości */
+    .opacity-control {
+      background: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+      min-width: 150px;
+    }
+
+    .opacity-control input {
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .custom-popup b {
+      color: #2c3e50;
+      text-transform: uppercase;
+      font-size: 10px;
+      display: block;
+      margin-top: 5px;
+    }
+
+    .custom-popup span {
+      font-size: 14px;
+      color: #34495e;
+      display: block;
+      margin-bottom: 2px;
+    }
+
+    .popup-title {
+      font-size: 16px !important;
+      font-weight: bold;
+      border-bottom: 2px solid #eee;
+      margin-bottom: 10px !important;
+      padding-bottom: 5px;
+    }
   </style>
 </head>
 
@@ -29,26 +84,35 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
 
-<script>
+  <script>
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
     const GEOJSON_FILE = 'powiaty4205.geojson';
 
-    // KONFIGURACJA MAPY - NAPRAWIONY SCROLL
-    const map = L.map('map', { 
+    // --- WARSTWY BAZOWE ---
+    const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' });
+    const light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: 'CartoDB' });
+    const orto = L.tileLayer('https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}', {
+      attribution: 'Google Satellite'
+    });
+
+    const map = L.map('map', {
+      layers: [light], // Warstwa startowa
       preferCanvas: true,
-      scrollWheelZoom: true, // Włączone przybliżanie kółkiem
-      wheelDebounceTime: 50, // Szybsza reakcja na kółko
-      dragging: true,        // Włączone przesuwanie
-      tap: false             // Wyłączone 'tap' (rozwiązuje problemy na iOS/Chrome)
+      scrollWheelZoom: true,
+      tap: false
     }).setView([52.06, 19.48], 6);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      attribution: '&copy; OSM'
-    }).addTo(map);
+    // Przełącznik map po prawej na górze
+    const baseMaps = {
+      "Jasna Mapa": light,
+      "Standardowa OSM": osm,
+      "Ortofoto (Satelita)": orto
+    };
+    L.control.layers(baseMaps).addTo(map);
 
-    // Dynamiczne kolory dla legendy
-    const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#1abc9c', '#d35400', '#27ae60'];
+    const colors = ['#3498db', '#2ecc71', '#f1c40f', '#e74c3c', '#e67e22', '#9b59b6', '#1abc9c', '#d35400'];
     const colorMap = {};
+    let geoLayer; // Zmienna globalna dla warstwy powiatów
 
     function getColor(seller) {
       if (!seller || seller.trim() === "") return '#bdc3c7';
@@ -75,20 +139,18 @@
         const csvText = await csvResponse.text();
         const powiatyData = await geoResponse.json();
         const parsed = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
-        
+
         const dataMap = {};
         const uniqueSellers = new Set();
 
         parsed.forEach(row => {
           if (row.Nazwa) {
             dataMap[cleanName(row.Nazwa)] = row;
-            if (row.Sprzedawca && row.Sprzedawca.trim() !== "") {
-              uniqueSellers.add(row.Sprzedawca.trim());
-            }
+            if (row.Sprzedawca) uniqueSellers.add(row.Sprzedawca.trim());
           }
         });
 
-        const geoLayer = L.geoJson(powiatyData, {
+        geoLayer = L.geoJson(powiatyData, {
           style: function (feature) {
             const row = dataMap[cleanName(feature.properties.nazwa || feature.properties.Nazwa)];
             const seller = row ? row.Sprzedawca : '';
@@ -100,7 +162,6 @@
           onEachFeature: function (feature, layer) {
             const rawName = feature.properties.nazwa || feature.properties.Nazwa || "Nieznany";
             const row = dataMap[cleanName(rawName)];
-
             let popupContent = `<div class="custom-popup"><span class="popup-title">${rawName}</span>`;
             if (row) {
               Object.keys(row).forEach(key => {
@@ -108,41 +169,52 @@
                   popupContent += `<b>${key}:</b><span>${row[key]}</span>`;
                 }
               });
-            } else {
-              popupContent += `<span>Brak danych w arkuszu.</span>`;
             }
             popupContent += `</div>`;
-
             layer.bindPopup(popupContent);
             layer.on('click', function (e) {
-              this.setStyle({ fillOpacity: 0.9, weight: 3 });
+              this.setStyle({ weight: 3 });
               this.openPopup();
-              L.DomEvent.stopPropagation(e); // Zapobiega dziwnym zachowaniom mapy przy kliku
+              L.DomEvent.stopPropagation(e);
             });
-
-            layer.on('popupclose', function() {
-              geoLayer.resetStyle(this);
-            });
+            layer.on('popupclose', () => geoLayer.resetStyle(layer));
           }
         }).addTo(map);
 
-        // Automatyczne dopasowanie widoku
         map.fitBounds(geoLayer.getBounds());
 
-        // --- DYNAMICZNA LEGENDA ---
+        // --- DODANIE LEGENDY ---
         const legend = L.control({ position: 'bottomright' });
         legend.onAdd = () => {
           const div = L.DomUtil.create('div', 'legend');
           div.innerHTML = '<strong>Sprzedawcy:</strong><br>';
-          
-          const sortedSellers = Array.from(uniqueSellers).sort();
-          sortedSellers.forEach(s => {
+          Array.from(uniqueSellers).sort().forEach(s => {
             div.innerHTML += `<div><i style="background:${getColor(s)}"></i> ${s}</div>`;
           });
-          div.innerHTML += `<div><i style="background:${getColor('')}"></i> Pozostałe</div>`;
+          div.innerHTML += `<div><i style="background:${getColor('')}"></i> Brak danych</div>`;
           return div;
         };
         legend.addTo(map);
+
+        // --- DODANIE SUWAKA PRZEZROCZYSTOŚCI ---
+        const opacityControl = L.control({ position: 'bottomleft' });
+        opacityControl.onAdd = () => {
+          const div = L.DomUtil.create('div', 'opacity-control');
+          div.innerHTML = '<strong>Przezroczystość danych</strong><br>';
+          const input = document.createElement('input');
+          input.type = 'range'; input.min = 0; input.max = 1; input.step = 0.1; input.value = 0.7;
+
+          input.oninput = (e) => {
+            const val = e.target.value;
+            geoLayer.setStyle({ fillOpacity: val });
+          };
+
+          div.appendChild(input);
+          // Zablokuj kliknięcia mapy pod suwakiem
+          L.DomEvent.disableClickPropagation(div);
+          return div;
+        };
+        opacityControl.addTo(map);
 
       } catch (e) {
         console.error("Błąd:", e);
@@ -150,7 +222,7 @@
     }
 
     loadProject();
-</script>
+  </script>
 </body>
-</html>
 
+</html>
