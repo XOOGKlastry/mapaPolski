@@ -577,14 +577,13 @@
         const stats = {};
         parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
 
-        // 1. Warstwa Województw (Niebieskie granice)
         wojLayer = L.geoJson(wojGeo, {
           pane: 'wojPane',
           style: {
-            color: '#2563eb',   // Kolor niebieski
+            color: '#ff0000',   // Zmieniono na czerwony
             weight: 2,          // Grubość linii
-            fillOpacity: 0,     // Przeźroczyste wypełnienie
-            interactive: false  // Nie blokuje kliknięć w powiaty pod spodem
+            fillOpacity: 0,     // Brak wypełnienia
+            interactive: false  // Pozwala klikać w powiaty pod spodem
           }
         }).addTo(map);
 
@@ -710,3 +709,4 @@
 </body>
 
 </html>
+
