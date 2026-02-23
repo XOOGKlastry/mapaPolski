@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>K44WY3P51</title>
+  <title>K44WY3P51 - Map</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -293,11 +293,6 @@
       font-family: 'Inter', sans-serif;
     }
 
-    .city-label::before,
-    .city-label::after {
-      display: none !important;
-    }
-
     .show-labels .city-label {
       display: block;
     }
@@ -333,11 +328,6 @@
 
     .nav-btn:hover {
       background: #334155;
-    }
-
-    .nav-btn svg {
-      width: 18px;
-      height: 18px;
     }
 
     .bottom-controls {
@@ -455,7 +445,7 @@
             <input type="checkbox" id="toggle-cities" checked
               style="width:20px; height:20px; margin-right:10px; accent-color:var(--primary);">
             <label for="toggle-cities"
-              style="margin:0; font-size:0.9rem; cursor:pointer; color:#333; font-weight:600;">Pokaż miasta powyżej 20 000 mieszkańców</label>
+              style="margin:0; font-size:0.9rem; cursor:pointer; color:#333; font-weight:600;">Pokaż miasta</label>
           </div>
         </div>
       </details>
@@ -469,8 +459,7 @@
             <img src="https://a.basemaps.cartocdn.com/dark_all/6/33/21.png"><span>Ciemna</span>
           </div>
           <div class="map-card" onclick="setBasemap('sat', this)">
-            <img
-              src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"><span>Satelita</span>
+            <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"><span>Satelita</span>
           </div>
           <div class="map-card" onclick="setBasemap('light', this)">
             <img src="https://a.basemaps.cartocdn.com/light_all/6/33/21.png"><span>Jasna</span>
@@ -502,8 +491,9 @@
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
     const GEOJSON_FILE = 'powiaty4205.geojson';
     const CITIES_GEOJSON = 'miasta.geojson';
+    const WOJEWODZTWA_GEOJSON = 'wojewodztwa.geojson'; // Nowy plik
 
-    let map, geoLayer, citiesLayer, userLocationMarker;
+    let map, geoLayer, citiesLayer, wojLayer, userLocationMarker;
     let currentBasemap;
     let fullData = {};
     let powiatyList = [];
@@ -564,19 +554,41 @@
 
       currentBasemap = baseLayers.osm;
       map.addLayer(currentBasemap);
+      
+      // Panes dla warstw
       map.createPane('citiesPane'); map.getPane('citiesPane').style.zIndex = 650;
+      map.createPane('wojPane'); map.getPane('wojPane').style.zIndex = 600; // Wyżej niż powiaty
 
       try {
-        const [csvRes, geoRes, citiesRes] = await Promise.all([fetch(SHEET_URL), fetch(GEOJSON_FILE), fetch(CITIES_GEOJSON)]);
+        const [csvRes, geoRes, citiesRes, wojRes] = await Promise.all([
+          fetch(SHEET_URL), 
+          fetch(GEOJSON_FILE), 
+          fetch(CITIES_GEOJSON),
+          fetch(WOJEWODZTWA_GEOJSON) // Pobieranie województw
+        ]);
+        
         const csvText = await csvRes.text();
         const powiatyGeo = await geoRes.json();
         const citiesGeo = await citiesRes.json();
+        const wojGeo = await wojRes.json();
         const parsedCsv = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
 
         parsedCsv.forEach(row => { if (row.Nazwa) fullData[cleanName(row.Nazwa)] = row; });
         const stats = {};
         parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
 
+        // 1. Warstwa Województw (Niebieskie granice)
+        wojLayer = L.geoJson(wojGeo, {
+          pane: 'wojPane',
+          style: {
+            color: '#2563eb',   // Kolor niebieski
+            weight: 2,          // Grubość linii
+            fillOpacity: 0,     // Przeźroczyste wypełnienie
+            interactive: false  // Nie blokuje kliknięć w powiaty pod spodem
+          }
+        }).addTo(map);
+
+        // 2. Warstwa Powiatów
         geoLayer = L.geoJson(powiatyGeo, {
           style: getStyle,
           onEachFeature: (f, l) => {
@@ -596,6 +608,7 @@
           }
         }).addTo(map);
 
+        // 3. Warstwa Miast
         citiesLayer = L.geoJson(citiesGeo, {
           pane: 'citiesPane',
           pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
@@ -624,13 +637,9 @@
         setupSearch();
 
         document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
-
         document.getElementById('toggle-cities').onchange = (e) => {
-          if (e.target.checked) {
-            if (!map.hasLayer(citiesLayer)) map.addLayer(citiesLayer);
-          } else {
-            if (map.hasLayer(citiesLayer)) map.removeLayer(citiesLayer);
-          }
+          if (e.target.checked) { if (!map.hasLayer(citiesLayer)) map.addLayer(citiesLayer); }
+          else { if (map.hasLayer(citiesLayer)) map.removeLayer(citiesLayer); }
         };
 
         document.getElementById('loader').style.display = 'none';
@@ -641,7 +650,6 @@
     function createFloatingLegend(stats) {
       const legend = document.getElementById('floating-legend');
       legend.innerHTML = '';
-
       const allItem = document.createElement('div');
       allItem.className = 'legend-chip active';
       allItem.innerHTML = `<div class="chip-color" style="background:#000"></div><div class="chip-label">Wszyscy</div>`;
@@ -702,4 +710,3 @@
 </body>
 
 </html>
-
