@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>K44WY3P51 - Map</title>
+  <title>K44WY3P51</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -20,151 +20,408 @@
     }
 
     body {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       font-family: 'Inter', sans-serif;
-      display: flex; height: 100vh;
-      overflow: hidden; background: #000;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+      background: #000;
     }
 
     #sidebar {
-      position: absolute; top: 0; left: 0;
-      height: 100%; width: 340px; max-width: 85%;
-      background: var(--surface); z-index: 2000;
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 340px;
+      max-width: 85%;
+      background: var(--surface);
+      z-index: 2000;
       box-shadow: 5px 0 25px rgba(0, 0, 0, 0.2);
-      display: flex; flex-direction: column;
+      display: flex;
+      flex-direction: column;
       transform: translateX(-105%);
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    #sidebar.active { transform: translateX(0); }
+    #sidebar.active {
+      transform: translateX(0);
+    }
 
     .sidebar-header {
-      padding: 20px; background: var(--primary);
-      color: white; display: flex;
-      justify-content: space-between; align-items: center;
+      padding: 20px;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .sidebar-header h2 { margin: 0; font-size: 1.1rem; font-weight: 700; }
+    .sidebar-header h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
 
     .close-btn {
-      background: rgba(255, 255, 255, 0.1); border: none;
-      color: white; width: 32px; height: 32px;
-      border-radius: 50%; cursor: pointer;
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
     }
 
-    .sidebar-content { flex-grow: 1; overflow-y: auto; padding: 10px; }
+    .sidebar-content {
+      flex-grow: 1;
+      overflow-y: auto;
+      padding: 10px;
+    }
 
     details {
-      background: white; border: 1px solid var(--border);
-      border-radius: 12px; margin-bottom: 12px; overflow: hidden;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    details[open] {
+      border-color: var(--primary);
     }
 
     summary {
-      padding: 16px; font-weight: 700; cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       list-style: none;
     }
 
-    summary::after { content: '+'; color: var(--primary); }
-    details[open] summary::after { content: '−'; }
-
-    .details-body { padding: 16px; border-top: 1px solid var(--border); background: #fcfcfc; }
-
-    input[type="text"], select {
-      width: 100%; padding: 12px;
-      border: 1px solid var(--border); border-radius: 8px;
-      font-size: 16px; box-sizing: border-box;
+    summary::after {
+      content: '+';
+      font-size: 1.2rem;
+      color: var(--primary);
     }
 
-    .map-switcher-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    details[open] summary::after {
+      content: '−';
+    }
+
+    summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .details-body {
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: #fcfcfc;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+
+    input:focus,
+    select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .map-switcher-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
 
     .map-card {
-      border: 2px solid transparent; border-radius: 8px;
-      overflow: hidden; cursor: pointer; position: relative; height: 60px;
+      border: 2px solid transparent;
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      position: relative;
+      height: 60px;
     }
 
-    .map-card img { width: 100%; height: 100%; object-fit: cover; }
+    .map-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
     .map-card span {
-      position: absolute; bottom: 0; width: 100%;
-      background: rgba(0, 0, 0, 0.6); color: white;
-      font-size: 10px; text-align: center; padding: 2px 0;
+      position: absolute;
+      bottom: 0;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.6);
+      color: white;
+      font-size: 10px;
+      text-align: center;
+      padding: 2px 0;
     }
 
-    .map-card.active { border-color: var(--accent); }
+    .map-card.active {
+      border-color: var(--accent);
+    }
 
-    #map { flex-grow: 1; height: 100%; width: 100%; z-index: 1; }
+    #map {
+      flex-grow: 1;
+      height: 100%;
+      width: 100%;
+      z-index: 1;
+    }
 
     #floating-legend {
-      position: absolute; z-index: 1000;
-      background: var(--glass); backdrop-filter: blur(10px);
-      border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-      bottom: 30px; left: 90px; width: 220px;
-      max-height: 80vh; overflow-y: auto; padding: 10px;
-      display: flex; flex-direction: column; gap: 5px;
+      position: absolute;
+      z-index: 1000;
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      transition: all 0.3s ease;
+      bottom: 30px;
+      left: 90px;
+      max-height: 80vh;
+      width: 220px;
+      overflow-y: auto;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
     }
 
     .legend-chip {
-      display: flex; align-items: center; padding: 8px 12px;
-      border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s;
+      font-size: 0.9rem;
+      white-space: nowrap;
     }
 
-    .legend-chip.active { background: var(--primary); color: white; }
-
-    .chip-color { width: 12px; height: 12px; border-radius: 50%; margin-right: 10px; flex-shrink: 0; }
-
-    .city-label {
-      background: transparent !important; border: none !important;
-      box-shadow: none !important; font-weight: 800;
-      color: var(--primary); text-shadow: 0 0 4px #fff;
-      font-size: 13px; display: none;
+    .legend-chip:hover {
+      background: rgba(0, 0, 0, 0.05);
     }
 
-    .show-labels .city-label { display: block; }
-
-    .nav-btn {
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-      width: 100%; padding: 12px; background: var(--primary);
-      color: white; text-decoration: none; border-radius: 8px;
-      font-weight: 600; margin-top: 10px;
+    .legend-chip.active {
+      background: var(--primary);
+      color: white;
     }
 
-    .bottom-controls {
-      position: absolute; bottom: 30px; left: 0; width: 100%;
-      padding: 0 20px; box-sizing: border-box;
-      display: flex; justify-content: space-between; z-index: 1000;
-      pointer-events: none;
+    .chip-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-right: 10px;
+      flex-shrink: 0;
+      border: 1px solid rgba(0, 0, 0, 0.1);
     }
 
-    .fab-btn {
-      pointer-events: auto; background: var(--primary);
-      color: white; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    .legend-chip.active .chip-color {
+      border-color: white;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
     }
 
-    .btn-menu { width: 56px; height: 56px; border-radius: 50%; font-size: 24px; }
-
-    .btn-loc { padding: 12px 20px; border-radius: 50px; font-weight: 700; gap: 8px; }
-
-    #overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0, 0, 0, 0.5); z-index: 1900;
-      opacity: 0; pointer-events: none; transition: opacity 0.3s;
+    .chip-label {
+      font-weight: 600;
+      flex-grow: 1;
+      margin-right: 8px;
     }
 
-    #overlay.active { opacity: 1; pointer-events: auto; }
-
-    #loader {
-      position: absolute; top: 0; width: 100%; height: 4px;
-      background: linear-gradient(90deg, var(--accent), #60a5fa);
-      z-index: 3000; display: none;
+    .chip-count {
+      font-size: 0.75rem;
+      opacity: 0.7;
+      font-weight: 500;
     }
 
     @media (max-width: 768px) {
       #floating-legend {
-        bottom: auto; top: 10px; left: 10px; right: 10px;
-        width: auto; flex-direction: row; flex-wrap: wrap;
+        bottom: auto;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        width: auto;
+        max-width: none;
+        height: auto;
+        max-height: 35vh;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        overflow-y: auto;
+        padding: 8px;
+        border-radius: 16px;
       }
+
+      .legend-chip {
+        padding: 6px 12px;
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.8);
+        margin: 3px;
+        border: 1px solid #eee;
+        flex-grow: 1;
+        justify-content: center;
+        max-width: 45%;
+      }
+    }
+
+    .city-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      font-weight: 800;
+      color: var(--primary);
+      text-shadow: 0 0 4px #fff, 0 0 2px #fff;
+      font-size: 13px;
+      display: none;
+      margin-top: -8px;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .city-label::before,
+    .city-label::after {
+      display: none !important;
+    }
+
+    .show-labels .city-label {
+      display: block;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    }
+
+    .leaflet-popup-content {
+      margin: 16px;
+      width: 260px !important;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      box-sizing: border-box;
+      margin-top: 15px;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: background 0.2s;
+    }
+
+    .nav-btn:hover {
+      background: #334155;
+    }
+
+    .nav-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .bottom-controls {
+      position: absolute;
+      bottom: 30px;
+      left: 0;
+      width: 100%;
+      padding: 0 20px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .fab-btn {
+      pointer-events: auto;
+      background: var(--primary);
+      color: white;
+      border: none;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s;
+    }
+
+    .fab-btn:active {
+      transform: scale(0.95);
+    }
+
+    .btn-menu {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      font-size: 24px;
+    }
+
+    .btn-loc {
+      padding: 12px 20px;
+      border-radius: 50px;
+      font-weight: 700;
+      gap: 8px;
+    }
+
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1900;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    #overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    #search-results {
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--border);
+      border-top: none;
+    }
+
+    .search-item {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+
+    #loader {
+      position: absolute;
+      top: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), #60a5fa);
+      z-index: 3000;
     }
   </style>
 </head>
@@ -192,10 +449,13 @@
         <summary>👤 Ustawienia Widoku</summary>
         <div class="details-body">
           <label>Przezroczystość warstw:</label>
-          <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7">
-          <div style="margin-top:20px; display:flex; align-items:center;">
-            <input type="checkbox" id="toggle-cities" checked style="width:20px; height:20px; margin-right:10px;">
-            <label for="toggle-cities">Pokaż miasta</label>
+          <input type="range" id="opacity-range" min="0" max="1" step="0.1" value="0.7" style="width: 100%;">
+
+          <div style="margin-top:20px; padding-top:15px; border-top:1px dashed #eee; display:flex; align-items:center;">
+            <input type="checkbox" id="toggle-cities" checked
+              style="width:20px; height:20px; margin-right:10px; accent-color:var(--primary);">
+            <label for="toggle-cities"
+              style="margin:0; font-size:0.9rem; cursor:pointer; color:#333; font-weight:600;">Pokaż miasta</label>
           </div>
         </div>
       </details>
@@ -209,7 +469,11 @@
             <img src="https://a.basemaps.cartocdn.com/dark_all/6/33/21.png"><span>Ciemna</span>
           </div>
           <div class="map-card" onclick="setBasemap('sat', this)">
-            <img src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"><span>Satelita</span>
+            <img
+              src="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/6/21/33"><span>Satelita</span>
+          </div>
+          <div class="map-card" onclick="setBasemap('light', this)">
+            <img src="https://a.basemaps.cartocdn.com/light_all/6/33/21.png"><span>Jasna</span>
           </div>
         </div>
       </details>
@@ -221,7 +485,14 @@
 
   <div class="bottom-controls">
     <button class="fab-btn btn-menu" onclick="toggleSidebar()">☰</button>
-    <button class="fab-btn btn-loc" onclick="locateUser()">📍 KAJ JO JE</button>
+    <button class="fab-btn btn-loc" onclick="locateUser()">
+      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      KAJ JO JE
+    </button>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -231,9 +502,8 @@
     const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQeWsr5Gpjk0ZpcHPdQr_95TKZaNVEjwPXT523dzFV7U6NzC1YpbXhG89zO1j6VICHqiS45tkZ6XEr3/pub?output=csv';
     const GEOJSON_FILE = 'powiaty4205.geojson';
     const CITIES_GEOJSON = 'miasta.geojson';
-    const WOJEWODZTWA_GEOJSON = 'wojewodztwa.geojson';
 
-    let map, geoLayer, citiesLayer, wojLayer, userLocationMarker;
+    let map, geoLayer, citiesLayer, userLocationMarker;
     let currentBasemap;
     let fullData = {};
     let powiatyList = [];
@@ -241,7 +511,7 @@
     const colors = ['#2563eb', '#059669', '#d97706', '#dc2626', '#7c3aed', '#0891b2', '#475569'];
 
     const baseLayers = {
-      osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }),
+      osm: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }),
       dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB' }),
       sat: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '© Esri' }),
       light: L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '© CartoDB' })
@@ -252,9 +522,7 @@
       document.getElementById('overlay').classList.toggle('active');
     }
 
-    function cleanName(n) { 
-      return n ? n.toString().toLowerCase().trim().replace("powiat ", "").replace("miasto ", "").trim() : ""; 
-    }
+    function cleanName(n) { return n ? n.toString().toLowerCase().trim().replace("powiat", "").replace("miasto", "").trim() : ""; }
 
     function getSellerColor(s) {
       if (!s) return '#cbd5e1';
@@ -267,15 +535,9 @@
     function getStyle(feature) {
       const name = cleanName(feature.properties.nazwa || feature.properties.Nazwa);
       const row = fullData[name];
-      const opacityVal = parseFloat(document.getElementById('opacity-range').value);
+      const opacityVal = document.getElementById('opacity-range').value;
       const isMatch = activeSellerFilter === 'all' || (row && row.Sprzedawca === activeSellerFilter);
-      return { 
-        fillColor: getSellerColor(row ? row.Sprzedawca : null), 
-        weight: 1, 
-        color: 'white', 
-        fillOpacity: isMatch ? opacityVal : 0.05, 
-        opacity: isMatch ? 1 : 0.1 
-      };
+      return { fillColor: getSellerColor(row ? row.Sprzedawca : null), weight: 1, color: 'white', fillOpacity: isMatch ? opacityVal : 0.05, opacity: isMatch ? 1 : 0.1 };
     }
 
     function setBasemap(type, el) {
@@ -289,93 +551,108 @@
     async function init() {
       document.getElementById('loader').style.display = 'block';
 
-      map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([52.06, 19.48], 6);
+      map = L.map('map', { zoomControl: false }).setView([52.06, 19.48], 6);
       L.control.zoom({ position: 'topright' }).addTo(map);
 
-      // Panele warstw - kluczowe dla poprawnego nakładania się granic
-      map.createPane('powiatyPane');
-      map.createPane('wojPane');
-      map.getPane('wojPane').style.zIndex = 450; 
-      map.getPane('wojPane').style.pointerEvents = 'none'; // Województwa nie blokują kliknięć
-
-      map.on('zoomend', () => {
-        if (map.getZoom() > 10) document.getElementById('map').classList.add('show-labels');
-        else document.getElementById('map').classList.remove('show-labels');
+      map.on('zoomend', function () {
+        if (map.hasLayer(citiesLayer) && map.getZoom() > 11) {
+          document.getElementById('map').classList.add('show-labels');
+        } else {
+          document.getElementById('map').classList.remove('show-labels');
+        }
       });
 
-      setBasemap('osm');
+      currentBasemap = baseLayers.osm;
+      map.addLayer(currentBasemap);
+      map.createPane('citiesPane'); map.getPane('citiesPane').style.zIndex = 650;
 
       try {
-        const [csvRes, geoRes, citiesRes, wojRes] = await Promise.all([
-          fetch(SHEET_URL), 
-          fetch(GEOJSON_FILE), 
-          fetch(CITIES_GEOJSON),
-          fetch(WOJEWODZTWA_GEOJSON)
-        ]);
-
+        const [csvRes, geoRes, citiesRes] = await Promise.all([fetch(SHEET_URL), fetch(GEOJSON_FILE), fetch(CITIES_GEOJSON)]);
         const csvText = await csvRes.text();
-        const parsedCsv = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
-        parsedCsv.forEach(row => { if (row.Nazwa) fullData[cleanName(row.Nazwa)] = row; });
-
-        // Warstwa Powiatów
         const powiatyGeo = await geoRes.json();
+        const citiesGeo = await citiesRes.json();
+        const parsedCsv = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
+
+        parsedCsv.forEach(row => { if (row.Nazwa) fullData[cleanName(row.Nazwa)] = row; });
+        const stats = {};
+        parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
+
         geoLayer = L.geoJson(powiatyGeo, {
-          pane: 'powiatyPane',
           style: getStyle,
           onEachFeature: (f, l) => {
             const name = f.properties.nazwa || f.properties.Nazwa;
             powiatyList.push({ name: name, layer: l });
+
             const data = fullData[cleanName(name)];
-            let html = `<b>${name}</b><hr>`;
+            let html = `<div style="font-weight:bold; font-size:1.1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:5px">${name}</div>`;
             if (data) {
-              html += `<div style="color:blue">Sprzedawca: ${data.Sprzedawca}</div>`;
-              Object.entries(data).forEach(([k,v]) => { if(k!=='Nazwa' && k!=='Sprzedawca') html += `<div>${k}: ${v}</div>`; });
+              html += `<div style="color:#2563eb; font-weight:700; margin-bottom:5px">${data.Sprzedawca || 'Brak'}</div>`;
+              Object.entries(data).forEach(([k, v]) => { if (k !== 'Nazwa' && k !== 'Sprzedawca') html += `<div><span style="color:#666">${k}:</span> <b>${v}</b></div>`; });
             }
+            l.bindPopup(html);
+            l.on('click', (e) => {
+              map.flyToBounds(e.target.getBounds(), { padding: [20, 20], maxZoom: 11 });
+            });
+          }
+        }).addTo(map);
+
+        citiesLayer = L.geoJson(citiesGeo, {
+          pane: 'citiesPane',
+          pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 6, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
+          onEachFeature: (f, l) => {
+            const name = f.properties.NAZWA || f.properties.name || "Miejscowość";
+            const pop = f.properties.LICZBAMIESZKANCOW;
+            const popFormatted = pop ? pop.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ") : "";
+
+            l.bindTooltip(name, { permanent: true, direction: 'top', className: 'city-label', offset: [0, -8] });
+            const lat = l.getLatLng().lat, lng = l.getLatLng().lng;
+            const html = `
+              <div style="font-size:1.1rem; font-weight:700; margin-bottom:2px">${name}</div>
+              ${popFormatted ? `<div style="font-size:0.85rem; color:#666; margin-bottom:8px">👥 ${popFormatted}</div>` : ''}
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Prowadź do
+              </a>
+            `;
             l.bindPopup(html);
           }
         }).addTo(map);
 
-        // Warstwa Województw (Czerwone granice)
-        const wojGeo = await wojRes.json();
-        wojLayer = L.geoJson(wojGeo, {
-          pane: 'wojPane',
-          style: { color: '#ff0000', weight: 2, fillOpacity: 0, interactive: false }
-        }).addTo(map);
-
-        // Warstwa Miast
-        const citiesGeo = await citiesRes.json();
-        citiesLayer = L.geoJson(citiesGeo, {
-          pointToLayer: (f, latlng) => L.circleMarker(latlng, { radius: 5, fillColor: "#fff", color: "#000", weight: 2, fillOpacity: 1 }),
-          onEachFeature: (f, l) => {
-            const name = f.properties.NAZWA || f.properties.name;
-            const lat = l.getLatLng().lat, lng = l.getLatLng().lng;
-            l.bindTooltip(name, { permanent: true, direction: 'top', className: 'city-label' });
-            l.bindPopup(`<b>${name}</b><br><a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" class="nav-btn">Prowadź do</a>`);
-          }
-        }).addTo(map);
-
-        const stats = {};
-        parsedCsv.forEach(row => { if (row.Sprzedawca) stats[row.Sprzedawca] = (stats[row.Sprzedawca] || 0) + 1; });
         createFloatingLegend(stats);
         setupSearch();
 
         document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
+
         document.getElementById('toggle-cities').onchange = (e) => {
-          if (e.target.checked) map.addLayer(citiesLayer); else map.removeLayer(citiesLayer);
+          if (e.target.checked) {
+            if (!map.hasLayer(citiesLayer)) map.addLayer(citiesLayer);
+          } else {
+            if (map.hasLayer(citiesLayer)) map.removeLayer(citiesLayer);
+          }
         };
 
-      } catch (err) { console.error("Błąd ładowania:", err); }
-      document.getElementById('loader').style.display = 'none';
+        document.getElementById('loader').style.display = 'none';
+
+      } catch (err) { console.error(err); }
     }
 
     function createFloatingLegend(stats) {
       const legend = document.getElementById('floating-legend');
-      legend.innerHTML = '<div class="legend-chip active" onclick="setActiveFilter(\'all\', this)"><div class="chip-color" style="background:#000"></div>Wszyscy</div>';
-      Object.entries(stats).sort((a,b)=>b[1]-a[1]).forEach(([n, c]) => {
+      legend.innerHTML = '';
+
+      const allItem = document.createElement('div');
+      allItem.className = 'legend-chip active';
+      allItem.innerHTML = `<div class="chip-color" style="background:#000"></div><div class="chip-label">Wszyscy</div>`;
+      allItem.onclick = function () { setActiveFilter('all', this); };
+      legend.appendChild(allItem);
+
+      Object.entries(stats).sort((a, b) => b[1] - a[1]).forEach(([n, c]) => {
         const item = document.createElement('div');
         item.className = 'legend-chip';
-        item.innerHTML = `<div class="chip-color" style="background:${getSellerColor(n)}"></div><div style="flex:1">${n}</div><div style="font-size:0.7rem;opacity:0.6">${c}</div>`;
-        item.onclick = () => setActiveFilter(n, item);
+        item.innerHTML = `<div class="chip-color" style="background:${getSellerColor(n)}"></div><div class="chip-label">${n}</div><div class="chip-count">${c}</div>`;
+        item.onclick = function () { setActiveFilter(n, this); };
         legend.appendChild(item);
       });
     }
@@ -388,9 +665,14 @@
     }
 
     function locateUser() {
-      map.locate({ setView: true, maxZoom: 13 });
-      map.once('locationfound', (e) => {
-        L.marker(e.latlng).addTo(map).bindPopup("Tu jesteś!").openPopup();
+      map.locate({ setView: true, maxZoom: 13, enableHighAccuracy: true });
+      map.once('locationfound', function (e) {
+        if (userLocationMarker) map.removeLayer(userLocationMarker);
+        userLocationMarker = L.layerGroup([
+          L.circle(e.latlng, { radius: e.accuracy / 2, color: '#2563eb' }),
+          L.circleMarker(e.latlng, { radius: 8, fillColor: '#2563eb', color: 'white', fillOpacity: 1 })
+        ]).addTo(map);
+        L.popup().setLatLng(e.latlng).setContent('<b>TU ŻEŚ JES!</b>').openOn(map);
       });
     }
 
@@ -401,13 +683,14 @@
         const q = cleanName(e.target.value);
         res.innerHTML = '';
         if (q.length < 2) return;
-        powiatyList.filter(p => cleanName(p.name).includes(q)).slice(0, 5).forEach(m => {
-          const d = document.createElement('div');
-          d.style.padding = '10px'; d.style.cursor = 'pointer'; d.innerText = m.name;
+        const matches = powiatyList.filter(p => cleanName(p.name).includes(q)).slice(0, 5);
+        matches.forEach(m => {
+          const d = document.createElement('div'); d.className = 'search-item'; d.innerText = m.name;
           d.onclick = () => {
-            map.flyToBounds(m.layer.getBounds());
-            setTimeout(() => m.layer.openPopup(), 1000);
+            input.value = m.name; res.innerHTML = '';
             toggleSidebar();
+            map.flyToBounds(m.layer.getBounds(), { maxZoom: 12 });
+            setTimeout(() => m.layer.openPopup(), 1500);
           };
           res.appendChild(d);
         });
@@ -417,4 +700,5 @@
     init();
   </script>
 </body>
+
 </html>
