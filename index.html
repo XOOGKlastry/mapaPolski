@@ -302,6 +302,30 @@
       display: block;
     }
 
+    /* Style dla etykiet powiatów */
+    .powiat-label {
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      text-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 0 2px rgba(0, 0, 0, 0.8);
+      font-size: 14px;
+      display: none;
+      text-align: center;
+      font-family: 'Inter', sans-serif;
+      pointer-events: none;
+    }
+
+    .powiat-label::before,
+    .powiat-label::after {
+      display: none !important;
+    }
+
+    .show-powiat-labels .powiat-label {
+      display: block;
+    }
+
     .leaflet-popup-content-wrapper {
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
@@ -560,6 +584,13 @@
         } else {
           document.getElementById('map').classList.remove('show-labels');
         }
+
+        // Nowy warunek dla etykiet powiatów
+        if (map.getZoom() > 8) {
+          document.getElementById('map').classList.add('show-powiat-labels');
+        } else {
+          document.getElementById('map').classList.remove('show-powiat-labels');
+        }
       });
 
       currentBasemap = baseLayers.osm;
@@ -582,6 +613,9 @@
           onEachFeature: (f, l) => {
             const name = f.properties.nazwa || f.properties.Nazwa;
             powiatyList.push({ name: name, layer: l });
+
+            // Podpięcie statycznej etykiety powiatu
+            l.bindTooltip(name, { permanent: true, direction: 'center', className: 'powiat-label' });
 
             const data = fullData[cleanName(name)];
             let html = `<div style="font-weight:bold; font-size:1.1rem; border-bottom:1px solid #ddd; padding-bottom:5px; margin-bottom:5px">${name}</div>`;
