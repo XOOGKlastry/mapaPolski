@@ -486,6 +486,11 @@
     let map, geoLayer, citiesLayer, wojLayer, countyLabelsLayer, userLocationMarker;
     let fullData = {};
     let powiatyList = [];
+
+    // WYDAJNOSC: bufor przezroczystosci, czytany raz przy zmianie suwaka
+    // zamiast odpytywania DOM dla kazdego z ~380 powiatow przy kazdym renderze
+    let currentOpacity = 0.7;
+
     const sellerColors = {
       "Michał": "#2980B9",
       "nikt": "#808080",
@@ -517,13 +522,12 @@
     function getStyle(feature) {
       const name = cleanName(feature.properties.nazwa || feature.properties.Nazwa);
       const row = fullData[name];
-      const opacityVal = document.getElementById('opacity-range').value;
       const isMatch = activeSellerFilter === 'all' || (row && row.Sprzedawca === activeSellerFilter);
       return {
         fillColor: getSellerColor(row ? row.Sprzedawca : null),
         weight: 0.8,
         color: 'rgba(255, 255, 255, 0.6)',
-        fillOpacity: isMatch ? opacityVal : 0.05,
+        fillOpacity: isMatch ? currentOpacity : 0.05,
         opacity: isMatch ? 1 : 0.1
       };
     }
@@ -545,7 +549,9 @@
     async function init() {
       document.getElementById('loader').style.display = 'block';
 
-      map = L.map('map', { zoomControl: false, minZoom: 6 }).setView([52.06, 19.48], 6);
+      // WYDAJNOSC: preferCanvas rysuje wszystkie poligony i kolka miast na jednym
+      // plotnie zamiast tworzyc setki elementow SVG. Duzy zysk przy zoomie i panoramowaniu.
+      map = L.map('map', { zoomControl: false, minZoom: 6, preferCanvas: true }).setView([52.06, 19.48], 6);
       L.control.zoom({ position: 'topright' }).addTo(map);
       map.addLayer(baseLayers.osm);
 
@@ -583,6 +589,12 @@
         const wojGeo = await wojRes.json();
 
         const parsedCsv = Papa.parse(csvText, { header: true, skipEmptyLines: true }).data;
+
+        // Straznik: jesli arkusz znow zgubi naglowek, od razu widac powod w konsoli
+        if (parsedCsv.length && !('Nazwa' in parsedCsv[0])) {
+          console.error('CSV bez naglowka "Nazwa"! Sprawdz pierwszy wiersz arkusza Google.', parsedCsv[0]);
+        }
+
         parsedCsv.forEach(row => { if (row.Nazwa) fullData[cleanName(row.Nazwa)] = row; });
 
         // Statystyki z obsługą zliczania dużych miast
@@ -594,23 +606,33 @@
           }
         });
 
-        // Logika Turf.js - przypisanie miast > 20k do powiatów i ich sprzedawców
+        // WYDAJNOSC: liczymy bbox kazdego powiatu RAZ, z gory.
+        // Potem przy dopasowaniu miasta tani test bbox odrzuca prawie wszystkie powiaty,
+        // a kosztowny booleanPointInPolygon odpala sie tylko dla 1-3 kandydatow zamiast dla ~380.
+        const countyIndex = powiatyGeo.features
+          .filter(c => c.geometry)
+          .map(c => ({
+            feature: c,
+            cName: cleanName(c.properties.nazwa || c.properties.Nazwa),
+            bbox: turf.bbox(c) // [minLng, minLat, maxLng, maxLat]
+          }));
+
         const bigCities = citiesGeo.features.filter(f => f.properties.LICZBAMIESZKANCOW > 20000);
 
-        // NOWOŚĆ: Tworzymy globalną listę powiatów z dużymi miastami
-        const globalBigCityCounties = new Set();
-
         bigCities.forEach(city => {
-          for (const county of powiatyGeo.features) {
-            if (county.geometry && turf.booleanPointInPolygon(city, county)) {
-              const cName = cleanName(county.properties.nazwa || county.properties.Nazwa);
+          const coords = city.geometry && city.geometry.coordinates;
+          if (!coords) return;
+          const lng = coords[0], lat = coords[1];
 
-              // Dodajemy powiat do globalnej listy, niezależnie od tego, czy ma przypisanego sprzedawcę
-              globalBigCityCounties.add(cName);
-
-              const rData = fullData[cName];
+          for (const entry of countyIndex) {
+            const b = entry.bbox;
+            // tani odrzut po prostokacie otaczajacym
+            if (lng < b[0] || lng > b[2] || lat < b[1] || lat > b[3]) continue;
+            // dopiero teraz drogi test geometryczny
+            if (turf.booleanPointInPolygon(city, entry.feature)) {
+              const rData = fullData[entry.cName];
               if (rData && rData.Sprzedawca && stats[rData.Sprzedawca]) {
-                stats[rData.Sprzedawca].bigCityCounties.add(cName);
+                stats[rData.Sprzedawca].bigCityCounties.add(entry.cName);
               }
               break;
             }
@@ -703,7 +725,21 @@
         createFloatingLegend(stats);
         setupSearch();
 
-        document.getElementById('opacity-range').oninput = () => geoLayer.setStyle(getStyle);
+        // WYDAJNOSC: suwak przezroczystosci.
+        // Wartosc czytamy raz do bufora, a samo przerysowanie throttlujemy przez
+        // requestAnimationFrame, dzieki czemu przeciaganie suwaka jest plynne.
+        const opacityRange = document.getElementById('opacity-range');
+        currentOpacity = parseFloat(opacityRange.value);
+        let opacityRaf = null;
+        opacityRange.oninput = () => {
+          currentOpacity = parseFloat(opacityRange.value);
+          if (opacityRaf) return;
+          opacityRaf = requestAnimationFrame(() => {
+            geoLayer.setStyle(getStyle);
+            opacityRaf = null;
+          });
+        };
+
         document.getElementById('toggle-cities').onchange = (e) => { if (e.target.checked) map.addLayer(citiesLayer); else map.removeLayer(citiesLayer); };
         document.getElementById('toggle-woj').onchange = (e) => { if (e.target.checked) map.addLayer(wojLayer); else map.removeLayer(wojLayer); };
         document.getElementById('toggle-labels').onchange = () => map.fire('zoomend');
